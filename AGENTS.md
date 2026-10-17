@@ -1,4 +1,4 @@
-# Zusammenarbeit im TaskManager-Repository
+# Zusammenarbeit im Nextleaf-Repository
 
 Dieses Projekt wird vollständig in Codex entwickelt und geplant. Dauerhaftes
 Projektwissen gehört ins Repository, nicht nur in den Chat.
@@ -12,6 +12,8 @@ Projektwissen gehört ins Repository, nicht nur in den Chat.
   aktualisieren. Geprüftes, Geplantes und noch Ungeprüftes klar unterscheiden.
 - Vorgesehener Stack: Rust, Axum, SQLx/SQLite, React, TypeScript, Vite, Tauri 2.
   Zielplattformen: macOS, Windows und Linux. GTD-Regeln liegen im Backend.
+- Die Anwendung verwendet ausschließlich englische UI-Texte, einschließlich
+  Fehlermeldungen, Tooltips und Beschriftungen für assistive Technologien.
 - Aktuelle Etappe: vorhandenes Gerüst zum Laufen bringen und prüfen.
   Größere UI-Änderungen erst nach entsprechendem Auftrag.
 - Kleine, vollständige Änderungen bevorzugen. Keine produktiven Daten oder

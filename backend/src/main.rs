@@ -424,7 +424,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     tracing_subscriber::fmt()
         .with_env_filter(
             tracing_subscriber::EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| "taskmanager_server=info,tower_http=info".into()),
+                .unwrap_or_else(|_| "nextleaf_server=info,tower_http=info".into()),
         )
         .init();
     let bind: SocketAddr = env::var("TASKMANAGER_BIND")
@@ -477,7 +477,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .allow_headers([header::CONTENT_TYPE]);
     app = app.layer(cors).layer(TraceLayer::new_for_http());
     let listener = tokio::net::TcpListener::bind(bind).await?;
-    tracing::info!("TaskManager listening on http://{bind}");
+    tracing::info!("Nextleaf listening on http://{bind}");
     axum::serve(listener, app).await?;
     Ok(())
 }

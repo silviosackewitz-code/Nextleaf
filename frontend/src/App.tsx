@@ -8,7 +8,7 @@ const menus: { view: View; title: string; symbol: string }[] = [
   { view: 'scheduled', title: 'Scheduled', symbol: '▦' },
   { view: 'someday', title: 'Someday', symbol: '◇' },
   { view: 'completed', title: 'Logbook', symbol: '✓' },
-  { view: 'all', title: 'Alle Aufgaben', symbol: '≡' },
+  { view: 'all', title: 'All tasks', symbol: '≡' },
 ];
 
 export default function App() {
@@ -71,33 +71,33 @@ export default function App() {
   }
   return <div className="app">
     <aside className="sidebar">
-      <div className="brand"><span className="brandmark">✳</span><span>TaskManager</span></div>
-      <div className="navlabel">Fokus</div>
+      <div className="brand"><span className="brandmark">✳</span><span>Nextleaf</span></div>
+      <div className="navlabel">Focus</div>
       <nav>{menus.map(menu => <button key={menu.view} className={`navitem ${view === menu.view && !areaId && !projectId ? 'active' : ''}`} onClick={() => changeView(menu.view)}><span className="navsymbol">{menu.symbol}</span>{menu.title}</button>)}</nav>
       <div className="navlabel spaced">Areas</div>
       <nav>{areas.map(area => <button key={area.id} className={`navitem ${areaId === area.id && !projectId ? 'active' : ''}`} onClick={() => selectArea(area.id)}><span className="navsymbol">▣</span>{area.name}</button>)}</nav>
-      <form className="sideform" onSubmit={createArea}><input aria-label="Neue Area" value={newArea} onChange={e => setNewArea(e.target.value)} placeholder="+ Neue Area"/><button disabled={busy} title="Area anlegen">+</button></form>
-      <div className="navlabel spaced">Projekte</div>
+      <form className="sideform" onSubmit={createArea}><input aria-label="New area" value={newArea} onChange={e => setNewArea(e.target.value)} placeholder="+ New area"/><button disabled={busy} title="Create area">+</button></form>
+      <div className="navlabel spaced">Projects</div>
       <nav>{filteredProjects.map(project => <button key={project.id} className={`navitem ${projectId === project.id ? 'active' : ''}`} onClick={() => selectProject(project.id)}><span className="navsymbol">{project.project_type === 'sequential' ? '⇥' : '◫'}</span><span className="ellipsis">{project.name}</span></button>)}</nav>
-      <form className="sideform projectform" onSubmit={createProject}><input aria-label="Neues Projekt" value={newProject} onChange={e => setNewProject(e.target.value)} placeholder="+ Neues Projekt"/><select aria-label="Projekttyp" value={projectType} onChange={e => setProjectType(e.target.value as Project['project_type'])}><option value="parallel">Parallel</option><option value="sequential">Sequential</option></select><button disabled={busy} title="Projekt anlegen">+</button></form>
-      <button className="settings" onClick={() => setShowSettings(v => !v)}>⚙ Verbindung</button>
+      <form className="sideform projectform" onSubmit={createProject}><input aria-label="New project" value={newProject} onChange={e => setNewProject(e.target.value)} placeholder="+ New project"/><select aria-label="Project type" value={projectType} onChange={e => setProjectType(e.target.value as Project['project_type'])}><option value="parallel">Parallel</option><option value="sequential">Sequential</option></select><button disabled={busy} title="Create project">+</button></form>
+      <button className="settings" onClick={() => setShowSettings(v => !v)}>⚙ Connection</button>
     </aside>
     <main className="main">
-      <header className="topbar"><div><span className="eyebrow">GTD / {activeProject ? 'Projekt' : activeArea ? 'Area' : 'Ansicht'}</span><h1>{titleText}</h1></div><div className="topright"><span className="count">{tasks.length} {tasks.length === 1 ? 'Eintrag' : 'Einträge'}</span><button className="iconbutton" aria-label="Aktualisieren" onClick={() => void reload()}>↻</button></div></header>
-      {activeProject && <div className="hint">Projektmodus: <strong>{activeProject.project_type === 'sequential' ? 'Sequential' : 'Parallel'}</strong>. Im Projekt sind alle offenen Schritte sichtbar; „Next“ zeigt nur freigegebene Aufgaben.</div>}
-      {showSettings && <section className="settingspanel"><h3>Serververbindung</h3><p>Für die native App standardmäßig <code>http://127.0.0.1:8787</code>. Für einen anderen Rechner die Mac-IP mit Port 8787 eintragen. Keine Freigabe ins öffentliche Internet.</p><form onSubmit={e => {e.preventDefault(); localStorage.setItem('taskmanager_api_url', apiUrl.trim()); setShowSettings(false); void reload();}}><input aria-label="Server-URL" value={apiUrl} onChange={e => setApiUrl(e.target.value)} placeholder="Standard verwenden"/><button>Speichern</button></form></section>}
-      {error && <div role="alert" className="error">Server nicht erreichbar oder Fehler: {error}. Bitte Backend starten und die Verbindung prüfen.</div>}
-      <form className="quickadd" onSubmit={createTask}><span className="addsymbol">+</span><input aria-label="Neue Aufgabe" value={title} onChange={e => setTitle(e.target.value)} placeholder="Neue Aufgabe erfassen …"/><select aria-label="Aufgabenstatus" value={taskStatus} onChange={e => setTaskStatus(e.target.value as View)}><option value="inbox">Inbox</option><option value="next">Next</option><option value="waiting">Waiting</option><option value="scheduled">Scheduled</option><option value="someday">Someday</option></select><button disabled={busy || !title.trim()}>Hinzufügen</button></form>
-      <div className="listhead"><span>AUFGABEN</span><span>STATUS</span></div>
+      <header className="topbar"><div><span className="eyebrow">GTD / {activeProject ? 'Project' : activeArea ? 'Area' : 'View'}</span><h1>{titleText}</h1></div><div className="topright"><span className="count">{tasks.length} {tasks.length === 1 ? 'task' : 'tasks'}</span><button className="iconbutton" aria-label="Refresh" onClick={() => void reload()}>↻</button></div></header>
+      {activeProject && <div className="hint">Project mode: <strong>{activeProject.project_type === 'sequential' ? 'Sequential' : 'Parallel'}</strong>. All unfinished tasks are visible in the project; Next shows only available tasks.</div>}
+      {showSettings && <section className="settingspanel"><h3>Server connection</h3><p>The desktop app uses <code>http://127.0.0.1:8787</code> by default. To connect to another computer, enter its IP address and port 8787. Do not expose the server to the public internet.</p><form onSubmit={e => {e.preventDefault(); localStorage.setItem('taskmanager_api_url', apiUrl.trim()); setShowSettings(false); void reload();}}><input aria-label="Server URL" value={apiUrl} onChange={e => setApiUrl(e.target.value)} placeholder="Use default"/><button>Save</button></form></section>}
+      {error && <div role="alert" className="error">Server unavailable or error: {error}. Start the backend and check your connection.</div>}
+      <form className="quickadd" onSubmit={createTask}><span className="addsymbol">+</span><input aria-label="New task" value={title} onChange={e => setTitle(e.target.value)} placeholder="Capture a new task …"/><select aria-label="Task status" value={taskStatus} onChange={e => setTaskStatus(e.target.value as View)}><option value="inbox">Inbox</option><option value="next">Next</option><option value="waiting">Waiting</option><option value="scheduled">Scheduled</option><option value="someday">Someday</option></select><button disabled={busy || !title.trim()}>Add</button></form>
+      <div className="listhead"><span>TASKS</span><span>STATUS</span></div>
       <section className="tasks">
-        {tasks.length === 0 && !error && <div className="empty"><div className="emptyicon">✓</div><h2>Alles erledigt oder noch nichts erfasst</h2><p>Erstelle eine Aufgabe über das Eingabefeld oben.</p></div>}
+        {tasks.length === 0 && !error && <div className="empty"><div className="emptyicon">✓</div><h2>All done or nothing captured yet</h2><p>Add a task using the field above.</p></div>}
         {tasks.map(task => <article className="task" key={task.id}>
-          <button className={`checkbox ${task.status === 'completed' ? 'checked' : ''}`} aria-label={task.status === 'completed' ? 'Aufgabe wieder öffnen' : 'Aufgabe abschließen'} disabled={busy} onClick={() => void action(() => api.setTaskStatus(task.id, task.status === 'completed' ? 'next' : 'completed'))}>{task.status === 'completed' ? '✓' : ''}</button>
-          <div className="taskbody"><div className={`tasktitle ${task.status === 'completed' ? 'done' : ''}`}>{task.title}</div><div className="taskmeta">{projects.find(p => p.id === task.project_id)?.name ?? (areas.find(a => a.id === task.area_id)?.name ?? 'Ohne Projekt')}{task.blocked_by_sequence ? ' · In Reihenfolge blockiert' : ''}</div></div>
-          <select aria-label={`Status für ${task.title}`} className="taskstatus" value={task.status} disabled={busy} onChange={e => void action(() => api.setTaskStatus(task.id, e.target.value))}><option value="inbox">Inbox</option><option value="next">Next</option><option value="waiting">Waiting</option><option value="scheduled">Scheduled</option><option value="someday">Someday</option><option value="completed">Erledigt</option></select>
+          <button className={`checkbox ${task.status === 'completed' ? 'checked' : ''}`} aria-label={task.status === 'completed' ? 'Reopen task' : 'Complete task'} disabled={busy} onClick={() => void action(() => api.setTaskStatus(task.id, task.status === 'completed' ? 'next' : 'completed'))}>{task.status === 'completed' ? '✓' : ''}</button>
+          <div className="taskbody"><div className={`tasktitle ${task.status === 'completed' ? 'done' : ''}`}>{task.title}</div><div className="taskmeta">{projects.find(p => p.id === task.project_id)?.name ?? (areas.find(a => a.id === task.area_id)?.name ?? 'No project')}{task.blocked_by_sequence ? ' · Blocked by sequence' : ''}</div></div>
+          <select aria-label={`Status for ${task.title}`} className="taskstatus" value={task.status} disabled={busy} onChange={e => void action(() => api.setTaskStatus(task.id, e.target.value))}><option value="inbox">Inbox</option><option value="next">Next</option><option value="waiting">Waiting</option><option value="scheduled">Scheduled</option><option value="someday">Someday</option><option value="completed">Completed</option></select>
         </article>)}
       </section>
-      <footer className="footer">Lokale Testversion · Rust / React / Tauri · Perspectives und MCP folgen</footer>
+      <footer className="footer">Local preview · Rust / React / Tauri · Perspectives and MCP coming later</footer>
     </main>
   </div>;
 }

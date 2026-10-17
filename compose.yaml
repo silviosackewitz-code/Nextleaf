@@ -1,0 +1,32 @@
+name: nextleaf
+
+services:
+  nextleaf:
+    image: ${TASKMANAGER_IMAGE:?Set TASKMANAGER_IMAGE in /etc/nextleaf/.env}
+    pull_policy: never
+    restart: unless-stopped
+    user: "10001:10001"
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp:size=64m,mode=1777
+    ports:
+      - "127.0.0.1:8787:8787"
+    environment:
+      TASKMANAGER_BIND: "0.0.0.0:8787"
+      TASKMANAGER_DATABASE_URL: "sqlite:///data/taskmanager.db"
+      TASKMANAGER_WEB_DIR: "/app/web"
+    volumes:
+      - type: bind
+        source: /var/lib/nextleaf
+        target: /data
+        bind:
+          create_host_path: false
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"

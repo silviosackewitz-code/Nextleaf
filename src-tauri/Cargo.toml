@@ -1,12 +1,12 @@
 [package]
-name = "taskmanager-desktop"
+name = "nextleaf-desktop"
 version = "0.1.0"
-description = "TaskManager Desktop"
-authors = ["TaskManager contributors"]
+description = "Nextleaf Desktop"
+authors = ["Nextleaf contributors"]
 edition = "2021"
 
 [lib]
-name = "taskmanager_desktop_lib"
+name = "nextleaf_desktop_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]

@@ -53,6 +53,71 @@
 - Aktuelle Aufgabenansichten und Datenmodell fachlich gegen Nirvana-HQ-Verhalten prüfen.
 - Tastaturbedienung und responsives Layout verbessern.
 
+### Ergänzungen vom 2026-10-17
+
+- Oberfläche vollständig auf Englisch umgestellt, einschließlich Tooltips,
+  barrierefreier Beschriftungen und HTML-Sprache. TypeScript/Vite-Build und
+  erneuter macOS-Debug-App-Build erfolgreich. Native Sichtprüfung weiterhin offen.
+- Als mögliche erste Serverumgebung den vorhandenen Raspberry Pi 5 mit Ubuntu
+  Server und Tailscale besprochen; noch keine Installation beauftragt oder
+  durchgeführt. Laut Nutzer läuft die neueste Ubuntu-LTS-Version. Aktuell ist
+  dies Ubuntu 26.04.1 LTS (Stand 2026-10-17); die tatsächlich installierte Version
+  und Architektur vor Ort mit `cat /etc/os-release` und `uname -m` bestätigen.
+  ARM64 als Build-Ziel vorgesehen; vorhandene Dienste und Speicher prüfen.
+  Referenzen: [Ubuntu LTS](https://releases.ubuntu.com/26.04/),
+  [Ubuntu auf Raspberry Pi](https://ubuntu.com/hardware/docs/boards/how-to/ubuntu_supported/raspberry-pi/).
+- Vorgeschlagener Betrieb: Axum mit gebautem Frontend auf `127.0.0.1:8787`,
+  Zugriff über Tailscale Serve mit HTTPS; Tailscale auch auf den zugreifenden
+  Geräten. Wegen fehlendem App-Login den Zugriff auf berechtigte eigene Geräte/
+  Nutzer begrenzen. Für Dauerbetrieb Docker Compose, persistente DB-Pfade und
+  SQLite-Backups vorbereiten; ARM/Linux-Build und Zugriff separat testen.
+  Referenzen: [Tailscale unter Linux](https://tailscale.com/docs/install/linux),
+  [Tailscale Serve](https://tailscale.com/docs/features/tailscale-serve).
+- Docker als gewünschte Betriebsform besprochen: ARM64-Image mit Backend und
+  gebautem Frontend, SQLite-Datenordner auf dem Host per Bind-Mount,
+  Veröffentlichung nur auf Host-Loopback und
+  Tailscale direkt auf Ubuntu. Dockerfile, `.dockerignore`, Compose-Konfiguration
+  und [Betriebsanleitung](DEPLOYMENT.md) sind erstellt; danach Build, API und
+  Datenpersistenz beim Neuerstellen des Containers sowie Backup/Restore prüfen.
+  Nach FHS-Recherche festgelegter Datenpfad: `/var/lib/nextleaf` auf dem Pi,
+  im Container `/data`; Konfiguration unter `/etc/nextleaf`. Dies ersetzt den
+  vorherigen `/srv`-Vorschlag. Daten bleiben außerhalb des Containers;
+  konsistente SQLite-Sicherungen oder Dateisicherung bei gestoppter App vorsehen.
+- Paperless-ngx, Immich und FHS-Verzeichnisstandard recherchiert; Ergebnis und
+  Sicherungsumfang in `ARCHITECTURE.md` dokumentiert. Zusätzlich zu den Daten
+  Compose, lokale Einstellungen und App-Version sichern. Vor Betrieb Backup-Ziel
+  und Zeitplan festlegen; Wiederherstellung in einer frischen Instanz testen.
+
+### Docker-Vorbereitung und Name
+
+- Produktname vom Nutzer bestätigt: **Nextleaf**. UI, Titel und Paketnamen
+  angepasst. Bestehende DB-Dateinamen, Umgebungsvariablen, lokale Einstellungen
+  und Tauri-App-ID aus Kompatibilitätsgründen beibehalten (siehe DECISIONS.md).
+- Schreibweise von Nextlief auf **Nextleaf** korrigiert. Backend-Tests,
+  Frontend-/macOS-App-Build und Compose-Prüfung danach erneut erfolgreich.
+- Open Source beabsichtigt; Lizenzwahl steht aus. [Namensprüfung](NAMING.md)
+  ergab gleichnamige Softwareprojekte, eine GitHub-Organisation sowie belegte
+  `.com`-/`.org`-Domains. `.app`/`.dev` ohne RDAP-Eintrag; Registrierbarkeit nicht
+  zugesichert. Nutzer bleibt nach Recherche bei **Nextleaf**. Keine eigene
+  Domain vorgesehen; eine spätere Domain darf anders heißen. Namenssuche
+  abgeschlossen, vollständige Markenprüfung weiterhin nicht durchgeführt.
+- Nutzer schlug als Alternative Clear Trail vor. Nachprüfung ebenfalls mit
+  Software-/IT-Namensüberschneidungen und belegten `.com`-/`.org`-/`.app`-Domains.
+  Auf Nutzerwunsch anschließend **Donebrook** und **Readyfern** vorgeprüft.
+  Beide Alternativen zugunsten von Nextleaf verworfen; keine weitere
+  Umbenennung vorgenommen. Details und Quellen in NAMING.md.
+- Nach Umbenennung geprüft: drei Backend-Tests und Rust-Formatprüfung bestanden;
+  TypeScript/Vite-Build und Tauri-Debug-Bundle erfolgreich. Neues Paket:
+  `src-tauri/target/debug/bundle/macos/Nextleaf.app`. Native Sichtprüfung offen.
+- Docker: Mehrstufen-Build, nicht privilegierter App-Benutzer, Healthcheck,
+  schreibgeschütztes Root-Dateisystem, Daten-Bind-Mount und Loopback-Port.
+  Neue Pi-Pfade: `/etc/nextleaf` und `/var/lib/nextleaf`.
+- Compose mit dem offiziellen Compose-Programm v5.6.0 auf macOS validiert;
+  Image-Auswahl, Loopback-Port, Datenpfad, fehlende automatische Ordneranlage,
+  Benutzerrechte und Fehler bei fehlender Image-Angabe geprüft.
+- Kein Docker-Daemon auf diesem Mac vorhanden. Image-Build, ARM64-Betrieb,
+  Persistenztest, Pi-Neustart, Tailscale und Backup/Restore bleiben offen.
+
 ## 2. Perspectives
 - Filter für Areas, Tags, Status, Projektart, Projekte/Aufgaben, Termine, Verfügbarkeit.
 - Gespeicherte Filter mit editierbarem Namen; dieselbe Abfragelogik im Backend.

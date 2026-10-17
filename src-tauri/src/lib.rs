@@ -2,5 +2,5 @@
 pub fn run() {
     tauri::Builder::default()
         .run(tauri::generate_context!())
-        .expect("Error while running TaskManager Desktop");
+        .expect("Error while running Nextleaf Desktop");
 }

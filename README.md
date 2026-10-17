@@ -1,4 +1,6 @@
-# TaskManager
+# Nextleaf
+
+Projektname: **Nextleaf**. Der lokale Checkout-Ordner heißt derzeit weiterhin `TaskManager`.
 
 Ein GTD-Task-Manager nach dem **einfachen Bedienprinzip von Nirvana HQ** mit OmniFocus-inspirierter Sequential-Logik, später eigenen Perspectives und MCP. Eigenständiges Open-Source-fähiges Projekt; kein Code von Nirvana oder OmniFocus enthalten.
 
@@ -72,7 +74,13 @@ cd ~/Developer/repo/TaskManager/backend
 TASKMANAGER_BIND=0.0.0.0:8787 cargo run
 ```
 
-Die produktive Konfiguration mit Zugriffsschutz/TLS/Tailscale folgt erst später.
+## Raspberry Pi mit Docker
+
+Dockerfile und Compose-Konfiguration sind vorbereitet. Einrichtung, Tailscale,
+Persistenzprüfung und Backup/Restore stehen in [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
+Konfiguration liegt auf dem Pi unter `/etc/nextleaf`, Daten unter
+`/var/lib/nextleaf`. Der Container veröffentlicht nur einen lokalen Host-Port.
+Der tatsächliche Docker-/ARM64-Test auf dem Pi steht noch aus.
 
 ## Erste Funktionen im Gerüst
 - Areas erstellen
