@@ -1,0 +1,12 @@
+{
+  "name": "taskmanager-monorepo",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "web:dev": "npm --prefix frontend run dev",
+    "web:build": "npm --prefix frontend run build",
+    "desktop:dev": "tauri dev",
+    "desktop:build": "tauri build"
+  },
+  "devDependencies": { "@tauri-apps/cli": "^2.0.0" }
+}
