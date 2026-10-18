@@ -102,7 +102,9 @@ pi7 image during the clean-install walkthrough. The owner then completed the new
 installation with configuration under
 `/opt/nextleaf-app` and the documented `/srv/nextleaf` data path. The screenshot
 confirmed a healthy 0.1.0 container, expected API capabilities, and private HTTPS
-forwarding. Browser persistence and native client acceptance are still pending.
+forwarding. The owner subsequently confirmed that the corrected Mac app opens,
+Mac/server task synchronization works, and the iPhone web interface works.
+Detailed offline, conflict, mobile-interaction, and restore tests remain separate.
 
 The pi7 update package was staged under `data/update-tags-20261018` locally and
 `~/nextleaf-update-tags-20261018` on the Pi. Its backup lives under

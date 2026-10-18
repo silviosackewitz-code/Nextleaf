@@ -10,18 +10,20 @@ and iPhone web interface. GPL-3.0-only was explicitly chosen. Public publication
 supersedes the earlier private-repository preference. Repository text and app UI
 must be English; conversation stays German. The local checkout is now `Nextleaf`.
 
-Release 0.1.0 is published with tested ARM64/AMD64 images, an unsigned Apple Silicon
-DMG, corresponding source, checksums, and the English install guide. Both anonymous
-installation jobs passed; exact evidence and remaining device checks are in NEXT_STEPS. The owner is now removing old installations and testing a fresh setup, Pi first. Test tasks are disposable and still exist in Nirvana. The old Pi test installation and Mac/iPhone state were removed. The fresh Pi container is healthy; browser and client acceptance are still pending.
-No Apple Developer membership/certificate is available, so do not claim notarization.
+The owner completed the basic fresh-install path: healthy Pi server, replacement
+Mac app opens and synchronizes test tasks with the Pi, and iPhone web access works.
+Installation revision 3 contains the repaired ad-hoc-signed Mac DMG. Detailed
+remaining acceptance checks are in NEXT_STEPS. Test tasks remain disposable.
+No Apple Developer membership/certificate is available; do not claim notarization.
 
-## Current Mac packaging correction
+## Resolved Mac packaging correction
 
 The owner reached a "damaged" alert with the downloaded Mac DMG. Hashes matched,
 but the original app bundle failed strict codesign resource verification. Revision
 3 enables Tauri ad-hoc bundle signing and a macOS Apple Silicon filename. Do not
 use the older DMGs for the clean-install acceptance test or bypass quarantine.
-See NEXT_STEPS for actual verification results. The live Pi must remain untouched.
+The owner confirmed the replacement app opens and sync works. See NEXT_STEPS for
+verification limits. Preserve the working Pi and fresh client data.
 
 ## Repository and runtime
 
@@ -36,10 +38,9 @@ retains tag IDs, People kinds, archives, and field-level conflict behavior.
 
 The owner confirmed Mac data-folder deletion and iPhone cleanup, then installed
 the public 0.1.0 image with the new layout. Screenshot evidence shows a healthy
-container, expected API capabilities, and private HTTPS forwarding. The next user
-step is to confirm the already-created browser test task survives reloading,
-then complete the fresh Mac installation and iPhone web setup. Revision 2 public
-installation checks passed on both architectures; evidence is in NEXT_STEPS.
+container, expected API capabilities, and private HTTPS forwarding. The owner then confirmed native Mac synchronization
+and working iPhone web access. The basic setup is complete. Further offline,
+conflict, detailed mobile, MCP-client, and restore checks remain separate.
 
 Configuration belongs in `/opt/nextleaf-app/`; persistent data is `/srv/nextleaf/`.
 Back up both consistently. Installation revision 2 (`install-v0.1.0-r2`) updates

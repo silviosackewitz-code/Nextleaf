@@ -15,8 +15,9 @@ data. It does not import the old test database or Nirvana data.
 
 The Mac DMG is a test build without Apple Developer ID signing or notarization.
 Expect a macOS approval step. Intel Mac, Windows, and Linux desktop installers
-are not included in this release. The final clean installation on the owner's
-Pi, Mac, and physical iPhone remains a separate acceptance test.
+are not included in this release. The owner has confirmed the basic fresh installation on Pi, Mac, and iPhone,
+including Mac/server synchronization. Detailed remaining tests are recorded in
+[NEXT_STEPS.md](NEXT_STEPS.md).
 
 ## Storage and backup layout
 

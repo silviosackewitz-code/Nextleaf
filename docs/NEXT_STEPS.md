@@ -4,7 +4,7 @@ Updated: 2026-10-18. Historical duplicate status notes have been consolidated;
 requirements and reasons remain in SPECIFICATION and DECISIONS, with original
 history available in Git.
 
-## Current Mac installation blocker
+## Resolved Mac installer defect
 
 The owner's browser-downloaded Mac installer reported "damaged". Both downloaded
 DMGs matched the published SHA-256, but strict app-bundle signature verification
@@ -15,7 +15,8 @@ plain-language macOS Apple Silicon filename. The rebuilt final DMG passed image
 integrity and strict deep bundle verification, including a sealed resource manifest.
 The mounted app passed isolated local MCP startup, 13-tool enumeration, tag edits,
 and restart persistence with SQLite integrity. TypeScript/Vite and the Tauri release
-build passed. Downloaded GUI launch with quarantine intact remains an owner check.
+build passed. The owner subsequently confirmed that the replacement app opens;
+no quarantine removal or system security bypass was performed by this agent.
 Revision 3 is published at `install-v0.1.0-r3` with eight assets. All seven payload
 files were anonymously downloaded and matched the published checksums. The DMG is
 `Nextleaf-0.1.0-macOS-Apple-Silicon-r3.dmg` with SHA-256
@@ -29,7 +30,8 @@ no server reinstall is needed.
 
 Published the public **0.1.0 installation-test prerelease**, GPL-3.0-only, with
 English repository/application text, Linux ARM64/AMD64 images, versioned Compose
-files, an unsigned Apple Silicon DMG, corresponding source, and checksums.
+files, an ad-hoc-signed Apple Silicon DMG without Developer ID/notarization,
+corresponding source, and checksums.
 The local checkout is `Nextleaf`. The owner confirmed removal of the old Mac app,
 its data folders, and iPhone website/app state. The old pi7 container, configuration,
 and data were removed, followed by a fresh public-image installation using the
@@ -38,7 +40,12 @@ The owner's screenshot confirms a healthy 0.1.0 container, loopback port binding
 `status: ok`, `tag-management`, `sync-v2`, disabled MCP, and private Tailscale HTTPS.
 The owner confirmed browser access on the Mac and creation of the installation
 check task. Private HTTPS health and web-page retrieval also passed from the Mac.
-Reload persistence and fresh native Mac/iPhone acceptance are still pending.
+The owner then confirmed the replacement native Mac app opens and synchronization
+works: test tasks are present on both Mac and server. A screenshot shows the
+installed app with the server test task and "Synced". The owner also confirmed
+that the iPhone web interface works after cleanup and setup. This establishes the
+basic fresh-install path across Pi, Mac, and iPhone on the owner's devices; it does
+not establish every mobile interaction, offline/conflict scenario, or restore test.
 
 Installation revision 2 updates the `.env` template and Compose fallback to the
 agreed paths directly; no post-download path correction is needed. It reuses the
@@ -116,15 +123,15 @@ test or a complete download-to-clean-Pi installation.
 
 ## Next acceptance steps
 
-1. Confirm browser access and persistence on the newly installed Pi.
-2. Owner installs the fresh native Mac app, then adds the iPhone web interface.
-3. Check persistence, offline desktop edits, reconnection, concurrent edit conflicts,
-   real Safari keyboard/landscape, and Home Screen behavior.
-4. Record actual outcomes and fix installation issues before expanding features.
+1. Check offline desktop edits and reconnection on the fresh installation.
+2. Check concurrent edit conflicts, real Safari keyboard/landscape, and Home Screen
+   behavior explicitly; the owner's general iPhone confirmation is not a full checklist.
+3. Set up an actual assistant through MCP when requested, and rehearse backup/restore.
+4. Record outcomes before expanding features.
 
 ## Remaining work after this milestone
 
-- Developer ID signing/notarization and clean-machine Mac acceptance.
+- Developer ID signing/notarization and broader clean-machine Mac acceptance.
 - Intel Mac, Windows, and Linux desktop packaging and actual platform checks.
 - Full backup/restore rehearsal, beyond container recreation persistence.
 - Real ChatGPT/Claude registration and voice-mode tests; local stdio is preferred.
