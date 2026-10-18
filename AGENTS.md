@@ -1,20 +1,19 @@
-# Zusammenarbeit im Nextleaf-Repository
+# Working on Nextleaf
 
-Dieses Projekt wird vollständig in Codex entwickelt und geplant. Dauerhaftes
-Projektwissen gehört ins Repository, nicht nur in den Chat.
+Project knowledge belongs in the repository, not only in chat history.
 
-- Vor Änderungen `docs/SPECIFICATION.md`, `docs/ARCHITECTURE.md`,
-  `docs/DECISIONS.md` und `docs/NEXT_STEPS.md` lesen.
-- Neue oder geänderte Anforderungen in `docs/SPECIFICATION.md` festhalten.
-- Architekturentscheidungen mit Datum, Begründung und Konsequenzen in
-  `docs/DECISIONS.md` dokumentieren; `docs/ARCHITECTURE.md` konsistent halten.
-- Arbeitsstand, offene Probleme und nächste Schritte in `docs/NEXT_STEPS.md`
-  aktualisieren. Geprüftes, Geplantes und noch Ungeprüftes klar unterscheiden.
-- Vorgesehener Stack: Rust, Axum, SQLx/SQLite, React, TypeScript, Vite, Tauri 2.
-  Zielplattformen: macOS, Windows und Linux. GTD-Regeln liegen im Backend.
-- Die Anwendung verwendet ausschließlich englische UI-Texte, einschließlich
-  Fehlermeldungen, Tooltips und Beschriftungen für assistive Technologien.
-- Aktuelle Etappe: vorhandenes Gerüst zum Laufen bringen und prüfen.
-  Größere UI-Änderungen erst nach entsprechendem Auftrag.
-- Kleine, vollständige Änderungen bevorzugen. Keine produktiven Daten oder
-  Secrets einchecken. Plattformtests nur als bestanden melden, wenn ausgeführt.
+- Before changing code, read `docs/SPECIFICATION.md`, `docs/ARCHITECTURE.md`,
+  `docs/DECISIONS.md`, and `docs/NEXT_STEPS.md`.
+- Record changed requirements in SPECIFICATION, dated decisions and their reasons
+  in DECISIONS, and current verification and remaining work in NEXT_STEPS.
+  Keep ARCHITECTURE consistent with the implementation.
+- Use the existing Rust, Axum, SQLx/SQLite, React, TypeScript, Vite, and Tauri 2
+  stack. Keep GTD rules in the shared backend. Target macOS, Windows, and Linux;
+  distinguish supported release artifacts from future platform work.
+- All repository prose and application text must be English, including errors,
+  tooltips, accessibility labels, and documentation. Conversation language may differ.
+- Prefer small, complete changes. Do not commit user data or secrets.
+- Do not report a platform test as passed unless it was actually performed.
+  Distinguish implemented behavior, planned work, and unverified assumptions.
+- The current milestone is downloadable installation-test releases. Review and
+  Perspectives need a separate specification round before implementation.

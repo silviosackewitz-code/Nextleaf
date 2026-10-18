@@ -19,3 +19,6 @@
 **/*.db
 **/*.db-shm
 **/*.db-wal
+
+!LICENSE
+!THIRD_PARTY_NOTICES.txt

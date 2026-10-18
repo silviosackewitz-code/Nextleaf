@@ -1,119 +1,93 @@
 # Nextleaf
 
-Projektname: **Nextleaf**. Der lokale Checkout-Ordner heißt derzeit weiterhin `TaskManager`.
+**A self-hosted GTD task manager with a native Mac app and an iPhone web interface.**
 
-Ein GTD-Task-Manager nach dem **einfachen Bedienprinzip von Nirvana HQ** mit OmniFocus-inspirierter Sequential-Logik, später eigenen Perspectives und MCP. Eigenständiges Open-Source-fähiges Projekt; kein Code von Nirvana oder OmniFocus enthalten.
+Keep your tasks on your own server. Use the Mac app with a local database, work
+when the server is unavailable, and sync when you reconnect. On iPhone, use the
+responsive web interface in Safari or add it to your Home Screen.
 
-## Installation für Anwender
+Nextleaf is open source under the **GNU GPL v3.0**.
 
-[Installationsanleitung für Pi, Mac und iPhone](docs/INSTALLATION.md).
-Sie beschreibt den Download-/Compose-Weg, die native Mac-App, die iPhone-Web-App
-und den geplanten Neustart mit leeren Daten. **Release-Downloads, Container-Registry
-und signiertes Mac-DMG sind noch nicht veröffentlicht.** Der aktuelle Testbetrieb
-und Prüfstand stehen in [NEXT_STEPS.md](docs/NEXT_STEPS.md).
+## Install
 
-Die folgenden Befehle richten eine **Entwicklungsumgebung** ein.
+Follow the [installation guide](docs/INSTALLATION.md) for the complete path:
 
-## Voraussetzungen für Entwicklung auf dem Mac
-- Rust (`rustup`, inklusive Cargo)
-- Node.js (aktuelle LTS-Version) und npm
-- Xcode Command Line Tools (`xcode-select --install`), für Tauri auf macOS außerdem die üblichen Tauri-Systemvoraussetzungen
+1. Download the Compose and environment files on your Raspberry Pi or Linux server.
+2. Pull the prebuilt container and connect through private Tailscale HTTPS.
+3. Install the native Mac app from the DMG and connect it to your server.
+4. Open the same private address on your iPhone.
 
-Rust lässt sich über den offiziellen Installer auf <https://rustup.rs> einrichten.
-Falls Cargo noch nicht im Suchpfad liegt, `source "$HOME/.cargo/env"` ausführen.
-Mit `rustc --version`, `cargo --version`, `node --version` und `npm --version` prüfen.
+[Release downloads](https://github.com/silviosackewitz-code/Nextleaf/releases/tag/v0.1.0)
+include versioned configuration, checksums, corresponding source, and the Mac DMG.
+The first release is an **installation-test prerelease**, not a production release.
+The Mac package is for **Apple Silicon** and is not Developer ID signed or notarized.
+Server images target **Linux ARM64 and AMD64**.
 
-## Entwicklungsumgebung einrichten
+The server currently has no web login. Keep it on a trusted private network;
+the supplied Compose file binds to loopback and the guide uses Tailscale Serve.
+The iPhone web interface requires an available server. It is not an offline app.
 
-Im Repository-Verzeichnis arbeiten. Die folgenden Beispiele verwenden
-`~/Developer/repo/TaskManager`; bei einem anderen Speicherort den Pfad entsprechend ersetzen.
+## Features
 
-```bash
-cd ~/Developer/repo/TaskManager
-npm install
-npm --prefix frontend install
-```
+- Inbox, Next, Waiting, Scheduled, Someday, Focus, Later, Logbook, and Trash.
+- Areas and flat projects, with Parallel and Sequential project modes.
+- Inline task editing on desktop and touch-friendly sheets on phones.
+- Tags and People, archiving and restoration, waiting contacts, dates, time, and energy.
+- Project grouping, contextual filters, note display options, and a project overview.
+- Local desktop storage and bidirectional sync with explicit conflict resolution.
+- MCP access through the local desktop app or an authenticated server endpoint.
 
-### Backend starten (Terminal 1)
+Saved Perspectives, guided Review, native iPhone support, and Windows/Linux desktop
+installers remain future work. See [current status](docs/NEXT_STEPS.md).
 
-```bash
-cd ~/Developer/repo/TaskManager/backend
-cargo run
-```
+## Develop
 
-Die DB wird beim ersten Start automatisch als `data/taskmanager.db` im Repository angelegt und migriert.
-Das Backend aus `backend/` starten, da die Standardpfade relativ zum Arbeitsverzeichnis sind.
-Optional `.env.example` nach `.env` im Repository kopieren; das Backend lädt diese Datei auch aus dem übergeordneten Verzeichnis.
-Test: <http://127.0.0.1:8787/api/health> → `{"status":"ok"}`.
-
-### Web-App starten (Terminal 2)
+Install Rust and Node.js, plus the [Tauri platform prerequisites](https://v2.tauri.app/start/prerequisites/).
+The checkout folder is `Nextleaf`; its location is not a technical requirement.
 
 ```bash
-cd ~/Developer/repo/TaskManager
-npm run web:dev
-```
-
-Dann <http://localhost:1420> öffnen. Vite leitet `/api` an den Rust-Server weiter.
-
-### macOS Desktop-App starten (Terminal 2 statt Web-App)
-
-```bash
-cd ~/Developer/repo/TaskManager
+git clone https://github.com/silviosackewitz-code/Nextleaf.git
+cd Nextleaf
+npm ci
+npm --prefix frontend ci
 npm run desktop:dev
 ```
 
-Die Desktop-App enthält den Rust-Fachcode und eine lokale SQLite-Datenbank.
-Ein separater Backend-Prozess ist dafür nicht nötig. Den Pi-Abgleich in Settings
-ausdrücklich verbinden; ohne Pi bleibt die Desktop-App lokal nutzbar.
-
-### Statische Web-App über den Rust-Server
+The desktop embeds the backend and creates its own local database. For web development,
+start the server and frontend in separate terminals:
 
 ```bash
-cd ~/Developer/repo/TaskManager
+cargo run --locked --manifest-path backend/Cargo.toml
+```
+
+```bash
+npm run web:dev
+```
+
+The Vite proxy targets the local backend. Never commit the generated database or `.env`.
+
+```bash
+cargo test --locked --manifest-path backend/Cargo.toml
+npm --prefix frontend test
 npm run web:build
-cd backend
-cargo run
+npm run desktop:build -- --bundles app,dmg
 ```
 
-Danach ist bei vorhandenem `frontend/dist` die Weboberfläche unter <http://127.0.0.1:8787> erreichbar.
+Building a desktop bundle is platform-specific. A successful local build does not
+establish signing, notarization, or compatibility on untested platforms.
 
-### iPhone-Web-App
+## Documentation
 
-Die mobile Web-App wird vom Pi über die private Tailscale-HTTPS-Adresse geöffnet.
-Einrichtung und Home-Bildschirm: [Installationsanleitung](docs/INSTALLATION.md).
+- [Installation](docs/INSTALLATION.md) and [deployment/backup](docs/DEPLOYMENT.md)
+- [Requirements](docs/SPECIFICATION.md) and [architecture](docs/ARCHITECTURE.md)
+- [Decisions](docs/DECISIONS.md) and [current status](docs/NEXT_STEPS.md)
+- [MCP integration](docs/MCP.md) and [one-time Nirvana import](docs/NIRVANA_IMPORT.md)
+- [UI reference](docs/UX_REFERENCE.md), [future Review research](docs/REVIEW_RESEARCH.md),
+  and [name research](docs/NAMING.md)
 
-## Raspberry Pi mit Docker
+## License
 
-Dockerfile und Compose-Konfiguration sind vorbereitet. Einrichtung, Tailscale,
-Persistenzprüfung und Backup/Restore stehen in [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
-Konfiguration liegt auf dem Pi unter `/etc/nextleaf`, Daten unter
-`/var/lib/nextleaf`. Der Container veröffentlicht nur einen lokalen Host-Port.
-pi7 läuft auf ARM64 und wurde nach dem Update geprüft. Der öffentliche
-Download-/Pull-Installationsweg bleibt bis zur Release-Veröffentlichung offen.
-
-## Funktionsstand
-
-Aufgaben, Projekte, Areas, Tags/Personen, Focus, Termine und Waiting-Kontakte
-sind bearbeitbar. Desktop speichert lokal und synchronisiert zum Pi; die
-mobile Web-App bleibt online. REST und MCP verwenden denselben Rust-Fachcode.
-Perspectives, Review und native iPhone-Offline-App sind noch nicht implementiert.
-Die vollständigen Regeln stehen in [SPECIFICATION.md](docs/SPECIFICATION.md).
-
-## Struktur
-
-Für die Weiterentwicklung zuerst [AGENTS.md](AGENTS.md) lesen. Spezifikation,
-Architektur, Entscheidungen und Arbeitsstand werden dauerhaft in `docs/` gepflegt.
-
-```text
-backend/      Rust (Axum, SQLx), SQLite-Migration und Unit-Tests
-frontend/     React, TypeScript, Vite; responsive Weboberfläche
-src-tauri/    Tauri-2-Desktop-Shell (macOS/Windows/Linux)
-docs/         Spezifikation und Architektur
-data/         lokale SQLite-Dateien, nicht in Git
-```
-
-## Entwicklung und Freigabe
-
-Lokale Daten und Secrets sind durch `.gitignore` ausgeschlossen. Vor Änderungen
-[AGENTS.md](AGENTS.md) lesen. Windows/Linux, signierte Release-Pakete und die
-Erstinstallation über veröffentlichte Downloads sind getrennt zu prüfen.
+Copyright (C) 2026 Silvio Sackewitz. Nextleaf is licensed under
+[GNU General Public License version 3 only](LICENSE), SPDX `GPL-3.0-only`.
+Third-party components retain their own licenses; see [third-party notices](THIRD_PARTY_NOTICES.txt).
+Release source and build instructions are provided alongside the binaries.

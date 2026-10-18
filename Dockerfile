@@ -18,6 +18,7 @@ RUN apt-get update \
     && groupadd --gid 10001 nextleaf \
     && useradd --uid 10001 --gid 10001 --no-create-home --shell /usr/sbin/nologin nextleaf \
     && install -d -o 10001 -g 10001 -m 0750 /data
+COPY LICENSE THIRD_PARTY_NOTICES.txt /usr/share/doc/nextleaf/
 WORKDIR /app
 COPY --from=backend /build/backend/target/release/nextleaf-server /usr/local/bin/nextleaf-server
 COPY --from=frontend /build/frontend/dist /app/web

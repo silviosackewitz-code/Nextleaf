@@ -1,100 +1,63 @@
-# Bedienreferenz: Nirvana
+# UI reference: Nirvana
 
-Direkt in der vorhandenen Nirvana-macOS-App am 2026-10-17 angesehen.
-Keine Aufgaben angelegt, bearbeitet oder abgeschlossen. Beobachtungen sind
-keine automatische Freigabe, jede Funktion sofort nachzubauen.
+Observed in the owner's existing Nirvana macOS app on 2026-10-17, without creating,
+editing, or completing tasks. Observations are not blanket authorization to copy
+every visible feature. The agreed Nextleaf rules live in SPECIFICATION.
 
-## Beobachtet
+## Desktop observations and accepted direction
 
-- Inbox steht getrennt oben, danach die alltäglichen GTD-Ansichten.
-- Projects hat zwei Funktionen: der Titel öffnet eine Projektübersicht,
-  der eigene Pfeil klappt die Sidebar-Liste ein/aus. Ein-/Ausklappen geprüft.
-- Tags sind ein eigener einklappbarer Bereich. Logbook und Trash stehen unten.
-  Areas werden über eine Auswahl oben gefiltert.
-- Next kann gruppiert nach Projekt oder als gemeinsame Liste angezeigt werden.
-  Das geöffnete Menü „Next View Options“ bietet außerdem „sequential next actions“
-  und eine Begrenzung sichtbarer Projektaktionen (top 1 bis top 9 oder All).
-  Die zugrundeliegenden Regeln wurden dabei nicht funktional getestet.
-- Tags/Termine stehen kompakt an der Aufgabenzeile, Notizen haben einen Indikator.
-  Oben sind Tag-Filter und drei Dichtestufen für die Liste sichtbar.
-- Der vom Nutzer gezeigte große Detailbereich ist ein in der Liste aufgeklappter
-  Editor: Titel/Tags/Notizen links, Zeit/Energie/Fälligkeit/Status/Projekt rechts;
-  „Save Changes“ und „Cancel“ unten. Kein separates Betriebssystemfenster.
-- Eine bereits erledigte Aufgabe blieb durchgestrichen in Next sichtbar.
-  „Cleanup“ ist mit „Collect completed items to the Logbook“ beschrieben.
-  Cleanup wurde nicht ausgeführt; automatischer Zeitpunkt nicht geprüft.
+Inbox stands separately above daily GTD views. Projects has a title button for
+its overview and a separate collapse arrow; Tags is collapsible, Logbook/Trash
+are near the bottom, and Areas filter at the top. Next offers unified/project
+and sequential-next display plus Top 1–9/All project-action limits. Opening those
+menus did not functionally validate Nirvana's underlying availability rules.
 
-- Das Aufgabenmenü am rechten Zeilenpfeil bietet unter anderem Due Date,
-  Areas/Contacts/Contexts, Time, Energy, Action State und Move. Time enthält
-  5/10/15/30/45 Minuten und mehrere Stundenwerte; Energy low/med/high/None.
-  Ebenfalls sichtbare Funktionen wie Convert/Copy/Email sind separat zu bewerten.
-- Nutzer bestätigt einzeilige Aufgaben, bearbeitbare Inline-Details und dieses
-  Schnellmenü. New Item mit Zielen für Aufgaben, Project und Tag gefällt ebenfalls
-  und ist inzwischen umgesetzt. Weitere Nutzerbilder zeigen zweizeilige Titel/Tags
-  in getrennten Bereichen und schmale Untermenüs links mit direkter Auswahl ohne Save.
-  Diese Präzisierung ersetzt die frühere Einzeilenpflicht. Nutzer präzisiert: Kategorien per Maus öffnen,
-  Inline-Editor rechts auf die fünf Referenzfelder beschränken; übrige Angaben
-  unter More options. Änderungen und Prüfstand: NEXT_STEPS.md.
+Rows show compact tags/dates and note indicators. The large task detail region is
+an editor expanded in the list, not an OS window: title/tags/notes on the left,
+time/energy/due/state/project on the right, Save Changes and Cancel below.
+A completed task remained struck through. Cleanup was described as collecting
+completed items into Logbook; it was not run, and automatic timing was not tested.
 
-## Für Nextleaf bereits beauftragt
+The right action menu includes due date, Areas/Contacts/Contexts, Time, Energy,
+state, and Move. Time includes 5/10/15/30/45 minutes and hour values; Energy includes
+low/medium/high/None. Visible Convert/Copy/Email actions are not automatically in scope.
 
-Kompakte Navigation, Inbox separat oben, seltene Ansichten unten, einklappbare
-Projekte, Plus/Dialog zur Projektanlage, Areas in Settings, klare Tags,
-Abschlussknopf am Titel, vorläufig sichtbare Erledigungen, reduzierte Hilfstexte.
-Schlichte bestehende Icons und englische UI beibehalten.
+The user approved compact rows, inline details, quick menus, and New Item task/
+project/tag destinations. Later screenshots clarified two-line titles and separate
+metadata, superseding strict single-line rows. Desktop submenus should open left,
+category hover should work, and direct choices should save immediately. Keep five
+primary editor fields and move the others under More options.
 
-## Nacheinander zu klären
+Nextleaf's completed-row policy is now explicit: retain locally until view change/
+refresh, while saving completion immediately. Group nonempty projects, show standalone
+actions first, omit repeated project labels, and retain metadata visibility choices.
+Use New Item rather than a permanent capture row. Areas belong in Settings and filters.
+Review/Perspectives remain future work; observations do not authorize implementing them.
 
-- Details sind geklärt: Nutzer bestätigt ausdrücklich direktes Aufklappen in
-  der Liste wie Nirvana. Der zwischenzeitliche separate Dialog wird ersetzt.
+## iPhone reference
 
-1. Cleanup ausdrücklich auslösen oder erledigte Zeilen bei Refresh/Ansichtswechsel
-   ausblenden? Aktuell umgesetzt ist die zweite Variante; Backend-Abschluss wird
-   in beiden Fällen sofort gespeichert und ist im Logbook erreichbar.
-2. Gruppierung ist bestätigt und umgesetzt: nichtleere Projektgruppen, projektlose
-   Actions zuerst, keine wiederholten Projektlabels. Area-Hinweise, Tags und Termine
-   bleiben per View options ein-/ausblendbar. Capture-Zeile und Areas-Sidebar-Liste
-   entfernt; New Item und All Areas-Filter oben. Settings unten bündig ausgerichtet.
+Six owner-supplied Nirvana iPhone screenshots were viewed in Photos on 2026-10-17:
+list, navigation, entry with keyboard, details, Time filter, and view menu. No photos
+were modified and no private screenshot contents were copied into the repository.
+Public [App Store screenshots](https://apps.apple.com/us/app/nirvana-for-gtd/id1022913190)
+were supplementary; the owner's screenshots were the primary reference.
 
-Vollständige Bearbeitung, Projektreihenfolge, Tags/Focus sowie Perspectives und
-MCP bleiben im vorhandenen Funktionsplan. Review wird erst in der nächsten
-Spezifikationsrunde anhand OmniFocus/iPad geplant, jetzt nicht implementiert.
+Observed full-width wrapping task rows, completion on the left, Focus on the right,
+metadata underneath, faded completed rows, and a round plus button. A compact header
+contains navigation, Area choice, and view menu; a horizontal filter strip shows
+All/Due/Time/Energy/Tags. A partly visible continuation suggests scrolling but no
+scroll gesture was observed in still images.
 
-## iPhone-Referenz (2026-10-17): sechs Nutzer-Screenshots
+Navigation overlays from the side. Details are a tall one-column sheet with Done,
+title/notes, Focus, tags/time/energy/due, assignment, and lower actions. An entry
+image shows Cancel/Save above the keyboard. Whether Done autosaves and the exact
+state transitions cannot be inferred from screenshots. The Time filter uses one
+compact menu. Additional Theme, Share, Paste, and Log completed options are not
+implicitly Nextleaf requirements.
 
-Alle sechs aktuellen Nirvana-iPhone-Screenshots in der macOS-Fotos-App visuell
-angesehen (Aufgabenübersicht, Navigation, Eingabe mit Tastatur, Aufgabendetails,
-Time-Filter, Ansichtsmenü). Keine Fotos geändert oder private Inhalte ins
-Repository kopiert. Zusätzlich öffentliche iPhone-App-Store-Screens angesehen:
-https://apps.apple.com/us/app/nirvana-for-gtd/id1022913190
-Die Nutzer-Screenshots sind für diesen Entwurf maßgeblich.
-
-Beobachtet:
-- Aufgabenliste über nahezu volle Breite; Checkbox links, Focus-Stern rechts,
-  Titel mehrzeilig, optionale Metadaten darunter. Erledigte Aufgabe bleibt blass
-  und durchgestrichen in der Liste. Runder Plus-Knopf unten rechts.
-- Kopf mit Menüknopf, All Areas und Drei-Punkte-Menü. Darunter Ansichtstitel und
-  horizontale Filterreihe mit All/Due/Time/Energy/Tags; am Rand abgeschnittene
-  weitere Filter sichtbar (Scrollgeste selbst nicht geprüft).
-- Seitliches überlagerndes Navigationspanel mit Inbox, GTD-Ansichten und
-  einklappbarem Projects-Bereich; Hauptansicht rechts teilweise sichtbar.
-- Details als hoher einspaltiger Sheet mit Done oben, Titel/Notizen, Focus,
-  Tags/Time/Energy/Due, Projektzuordnung und Move/Trash/Mehr unten.
-- Eingabescreenshot zeigt Cancel/Save oben und Bildschirmtastatur unten;
-  Aktionen bleiben darüber sichtbar. Ob Done automatisch speichert und wann
-  die App zwischen diesen Zuständen wechselt, ist aus Bildern nicht belegbar.
-- Time-Filter öffnet ein einzelnes kompaktes Auswahlmenü. Ansichtsmenü bietet
-  View Options, Theme & Font Size, Log completed, Paste und Share.
-
-Für Nextleaf übernehmen: mobile Navigation, volle Listenbreite, Touchmenüs,
-separate mobile Details und tastaturverträgliche Bedienung. Die Desktop-Regel
-„Abschlusskreis im Editor ausblenden“ nicht allein aufgrund des fremden Screens
-ändern. Farben/zusätzliche Überschriften/Projektlabels und neue Funktionen sind
-nicht automatisch übernommen. Noch offen: genaue mobile Speicher-/Zurück-Regel,
-Filterumfang und Gesten. Bei Unklarheiten Nutzer gezielt fragen; weitere
-Screenshots nach Nutzerangebot bei Bedarf, aktuell kein zusätzlicher Bedarf.
-
-Quellcodeprüfung durch Agent: Sidebar wird unter 720px nur oberhalb des Inhalts
-angeordnet; kleine Desktop-Klickziele bleiben, Taskmetadaten in schmaler Spalte,
-seitliche Untermenüs können überlappen, Safe-Area-Regeln fehlen. Kein tatsächlicher
-iPhone-Lauf dieser Prüfung. Nächster Schritt ist ein konkreter mobiler Entwurf.
+Adopt responsive navigation, full-width lists, tap menus, mobile details, and
+keyboard-aware controls. Do not change desktop completion behavior solely because
+of a reference screenshot. The initial code review found stacked desktop navigation,
+small targets, cramped metadata, overflowing submenus, and missing safe areas;
+these motivated the implemented mobile pass. Actual iPhone Safari behavior remains
+a separate test. See INSTALLATION and NEXT_STEPS for acceptance and evidence.
