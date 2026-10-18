@@ -10,8 +10,9 @@ and iPhone web interface. GPL-3.0-only was explicitly chosen. Public publication
 supersedes the earlier private-repository preference. Repository text and app UI
 must be English; conversation stays German. The local checkout is now `Nextleaf`.
 
-Prepare server images, an unsigned Apple Silicon test DMG, and the English install
-guide. The owner will then remove old installations and test a fresh setup, Pi
+Release 0.1.0 is published with tested ARM64/AMD64 images, an unsigned Apple Silicon
+DMG, corresponding source, checksums, and the English install guide. Both anonymous
+installation jobs passed; exact evidence and remaining device checks are in NEXT_STEPS. The owner will then remove old installations and test a fresh setup, Pi
 first. Test tasks are disposable and still exist in Nirvana. No reset has been run.
 No Apple Developer membership/certificate is available, so do not claim notarization.
 
@@ -50,3 +51,8 @@ INSTALLATION covers first use and owner-performed reset; DEPLOYMENT covers norma
 updates/backup and prior Pi stages. MCP documents all 13 tools and client limits.
 NIRVANA_IMPORT records the historical one-time import. UX_REFERENCE, REVIEW_RESEARCH,
 and NAMING distinguish observations from accepted requirements and future choices.
+
+The checkout folder was renamed successfully. The Codex saved-project entry still
+points to the previous TaskManager path; the owner must update that app-level
+project link because the available tools cannot edit it. This does not affect
+GitHub, the renamed checkout, or release artifacts.

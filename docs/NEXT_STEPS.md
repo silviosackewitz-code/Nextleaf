@@ -6,16 +6,40 @@ history available in Git.
 
 ## Current milestone
 
-Prepare the public **0.1.0 installation-test prerelease**, GPL-3.0-only, with
+Published the public **0.1.0 installation-test prerelease**, GPL-3.0-only, with
 English repository/application text, Linux ARM64/AMD64 images, versioned Compose
 files, an unsigned Apple Silicon DMG, corresponding source, and checksums.
 The local checkout is `Nextleaf`. The owner will perform the later empty-device
 installation test using INSTALLATION.md. Do not reset existing installations now.
 
-Release preparation is in progress. Before announcing it ready, record successful
-container jobs, anonymous image access/downloads, and Mac artifact checks here.
-The first local Mac app/DMG build succeeded; it must be rebuilt after bundling
-license notices. No Developer ID certificate is configured.
+## Release verification
+
+[Release 0.1.0](https://github.com/silviosackewitz-code/Nextleaf/releases/tag/v0.1.0)
+is public, with eight assets including checksums. Application source at the release
+tag: `3764c3546a68d0c8fbc6edcdc0f3e4b5c59f1a83`.
+
+- [Native image build and smoke tests](https://github.com/silviosackewitz-code/Nextleaf/actions/runs/39150545266):
+  ARM64 and AMD64 passed. Each build ran 28 Rust tests; the explicitly ignored
+  localhost-network test was not included in the ordinary cargo test invocation.
+  The container smoke check exercised real HTTP/MCP and restart persistence.
+- [Anonymous installation test](https://github.com/silviosackewitz-code/Nextleaf/actions/runs/39150955212):
+  both architectures downloaded and verified the release configuration, pulled
+  the image with empty registry credentials, and passed fresh Compose/API/MCP,
+  tag/Person rename, and data/server-identity persistence checks.
+- Independently downloaded every asset without authentication; all seven file
+  hashes matched the published SHA256SUMS and local originals.
+- Mac DMG: image checksum verified; Apple Silicon executable, correct version,
+  Applications link, GPL/third-party resources checked. Running the executable
+  from the read-only DMG against isolated data passed all 13 MCP tools, tag/Person
+  creation/rename/archive/restore, restart persistence, and SQLite integrity.
+- Re-ran the 39 frontend tests successfully. TypeScript/Vite and the native release
+  build passed. No application source differs between the tested DMG and tag.
+
+Container index digest: `sha256:ed1f29adf8fa75c04d0d28e0f6afaf80e127952b7d21ce0c3a8d7374d45241dd`.
+The Mac build has no Developer ID signature or notarization. Fresh-machine
+Gatekeeper behavior and actual physical-device installation remain owner tests.
+The first container attempt caught an unsupported read route in the new check;
+the check was corrected before publishing any images or the release.
 
 ## Verified before release packaging
 
@@ -39,12 +63,11 @@ test or a complete download-to-clean-Pi installation.
 
 ## Next acceptance steps
 
-1. Finish publishing and verifying release artifacts and public registry access.
-2. Owner removes old Pi/Mac/iPhone test installations and local replicas.
-3. Owner follows the guide: empty Pi, native Mac, then iPhone web.
-4. Check persistence, offline desktop edits, reconnection, concurrent edit conflicts,
+1. Owner removes old Pi/Mac/iPhone test installations and local replicas.
+2. Owner follows the guide: empty Pi, native Mac, then iPhone web.
+3. Check persistence, offline desktop edits, reconnection, concurrent edit conflicts,
    real Safari keyboard/landscape, and Home Screen behavior.
-5. Record actual outcomes and fix installation issues before expanding features.
+4. Record actual outcomes and fix installation issues before expanding features.
 
 ## Remaining work after this milestone
 

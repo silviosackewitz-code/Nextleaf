@@ -71,7 +71,7 @@ The Vite proxy targets the local backend. Never commit the generated database or
 
 ```bash
 cargo test --locked --manifest-path backend/Cargo.toml
-npm --prefix frontend test
+node --experimental-strip-types --test frontend/tests/*.test.ts
 npm run web:build
 npm run desktop:build -- --bundles app,dmg
 ```
