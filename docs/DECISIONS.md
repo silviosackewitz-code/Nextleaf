@@ -4,6 +4,23 @@ Consolidated English record. Later decisions supersede earlier ones where stated
 Git history retains the original development notes. Dates are decision dates,
 not promises that every target platform was tested.
 
+## 2026-10-18: shared application directories and explicit backup scope
+
+The owner supplied the existing Immich directory specification and requested the
+same pattern for Nextleaf and future personal applications. Use `/opt/<app>-app/`
+for Compose and `.env`, `/srv/<app>/` for persistent data, and leave Docker's
+internal storage managed by Docker. For Nextleaf these are `/opt/nextleaf-app/`
+and `/srv/nextleaf/`. Both belong in backups; SQLite must be copied consistently.
+This supersedes the earlier `/etc/nextleaf` and `/var/lib/nextleaf` deployment layout.
+The earlier spoken “Source”/“SRC” was clarified by the supplied document's `/srv`.
+
+Keep published 0.1.0 assets and checksums intact. The image already supports an
+external data path, so the installation guide sets `NEXTLEAF_DATA_DIR=/srv/nextleaf`
+explicitly and installs the configuration under `/opt/nextleaf-app`. No application
+rebuild is required. Align template defaults in the next release. Backups to an
+external disk and encrypted off-site storage are a separate setup task; the supplied
+reference's planned destinations are not proof that any backup is running.
+
 ## 2026-10-18: public release, GPLv3, and English repository
 
 The owner explicitly approved public GitHub publication, superseding the earlier

@@ -18,6 +18,20 @@ Expect a macOS approval step. Intel Mac, Windows, and Linux desktop installers
 are not included in this release. The final clean installation on the owner's
 Pi, Mac, and physical iPhone remains a separate acceptance test.
 
+## Storage and backup layout
+
+Configuration and persistent data have separate, predictable locations:
+
+| Location | Contents | Back up? |
+| --- | --- | --- |
+| `/opt/nextleaf-app/` | `docker-compose.yml` and protected `.env` | Yes, the complete directory |
+| `/srv/nextleaf/` | SQLite database and any companion files | Yes, consistently; stop Nextleaf before copying |
+| Docker-managed storage | Downloaded images and disposable container layers | Not needed to restore Nextleaf |
+
+The container mounts `/srv/nextleaf` as `/data`. Its internal database path remains
+`/data/taskmanager.db`. The server is still release 0.1.0; only the host paths change.
+[Storage standard and backup scope](STORAGE.md) explains reuse for other applications.
+
 ## 1. Prerequisites
 
 On the Pi: 64-bit Ubuntu, Docker Engine with the Compose plugin, `wget`, `curl`,
@@ -62,21 +76,25 @@ Create the configuration directory. These are first-install commands: do not
 replace an existing `.env` during a normal update.
 
 ```bash
-sudo install -d -m 0750 /etc/nextleaf
-sudo install -m 0640 docker-compose.yml /etc/nextleaf/docker-compose.yml
-sudo install -m 0600 example.env /etc/nextleaf/.env
-sudo nano /etc/nextleaf/.env
+sudo install -d -m 0750 /opt/nextleaf-app
+sudo install -m 0640 docker-compose.yml /opt/nextleaf-app/docker-compose.yml
+sudo install -m 0600 example.env /opt/nextleaf-app/.env
+sudo sed -i 's|^NEXTLEAF_DATA_DIR=.*|NEXTLEAF_DATA_DIR=/srv/nextleaf|' /opt/nextleaf-app/.env
+sudo nano /opt/nextleaf-app/.env
 ```
 
 The template already selects image `0.1.0`. Keep that version for this test.
-`NEXTLEAF_DATA_DIR` defaults to `/var/lib/nextleaf`. Leave `NEXTLEAF_MCP_TOKEN`
+`NEXTLEAF_DATA_DIR` must be `/srv/nextleaf` for this layout. The published 0.1.0
+template still contains the older `/var/lib/nextleaf` default; the command above
+changes it explicitly. The published files and their checksums remain unchanged.
+Leave `NEXTLEAF_MCP_TOKEN`
 empty for the first test; MCP will be disabled. Later integration is covered in
 [MCP.md](MCP.md). Use the exact private hostname in `NEXTLEAF_MCP_HOSTS` if enabling MCP.
 
 Create the persistent data directory. Adjust the path if you changed it in `.env`:
 
 ```bash
-sudo install -d -o 10001 -g 10001 -m 0700 /var/lib/nextleaf
+sudo install -d -o 10001 -g 10001 -m 0700 /srv/nextleaf
 ```
 
 For a fresh installation this directory must be empty. It is outside the container
@@ -86,10 +104,10 @@ create a missing host directory with the wrong owner.
 ## 3. Pull and start the server
 
 ```bash
-sudo docker compose --env-file /etc/nextleaf/.env -f /etc/nextleaf/docker-compose.yml config --quiet
-sudo docker compose --env-file /etc/nextleaf/.env -f /etc/nextleaf/docker-compose.yml pull
-sudo docker compose --env-file /etc/nextleaf/.env -f /etc/nextleaf/docker-compose.yml up -d --wait
-sudo docker compose --env-file /etc/nextleaf/.env -f /etc/nextleaf/docker-compose.yml ps
+sudo docker compose --env-file /opt/nextleaf-app/.env -f /opt/nextleaf-app/docker-compose.yml config --quiet
+sudo docker compose --env-file /opt/nextleaf-app/.env -f /opt/nextleaf-app/docker-compose.yml pull
+sudo docker compose --env-file /opt/nextleaf-app/.env -f /opt/nextleaf-app/docker-compose.yml up -d --wait
+sudo docker compose --env-file /opt/nextleaf-app/.env -f /opt/nextleaf-app/docker-compose.yml ps
 curl --fail http://127.0.0.1:8787/api/health
 ```
 
@@ -98,7 +116,7 @@ Expect a healthy service and JSON containing `status: ok`, `tag-management`,
 and `sync-v2`. If it fails, inspect logs before connecting clients:
 
 ```bash
-sudo docker compose --env-file /etc/nextleaf/.env -f /etc/nextleaf/docker-compose.yml logs --tail 100
+sudo docker compose --env-file /opt/nextleaf-app/.env -f /opt/nextleaf-app/docker-compose.yml logs --tail 100
 ```
 
 ## 4. Enable private HTTPS
@@ -178,26 +196,39 @@ Desktop browser checks at iPhone dimensions do not replace these device tests.
 
 ## 8. Remove the old test installation before starting over
 
-The owner performs this reset before the planned acceptance test. First stop all
-Nextleaf clients and local MCP processes. Otherwise an old desktop replica could
+Only use this section when deliberately deleting the old local test state. For a
+normal update, keep your data. First stop all Nextleaf clients and local MCP processes. Otherwise an old desktop replica could
 refill an empty server; a recreated server also has a new sync identity.
 
 - **Pi:** Stop the service with its existing Compose configuration. The old pi7
-  install uses `/etc/nextleaf/compose.yaml`; this release uses
-  `/etc/nextleaf/docker-compose.yml`. Pass the matching `.env` and run `down`.
+  install uses `/etc/nextleaf/compose.yaml` with data in `/var/lib/nextleaf`;
+  installations following this guide use
+  `/opt/nextleaf-app/docker-compose.yml`. Pass the matching `.env` and run `down`.
   Remove or move aside only the Nextleaf configuration and actual Nextleaf host
   data directory. `down --volumes` does not clear a bind mount. Select old images
   or update folders individually if removing them; do not run a global Docker prune.
-- **Mac:** Quit all Nextleaf instances and `Nextleaf --mcp` processes. Remove the
-  app from Applications and old test copies. In Finder, **Go → Go to Folder**,
-  open `~/Library/Application Support/dev.taskmanager.desktop` and move aside or
-  remove the complete directory, including SQLite companion files. Also clear
-  the matching `~/Library/WebKit/dev.taskmanager.desktop` and
-  `~/Library/Caches/dev.taskmanager.desktop` folders, if present, to reset UI state.
-  If Settings showed a custom data directory, use that location instead.
 - **iPhone:** Remove the Home Screen web app, close its Safari tabs, and clear
   website data only for the private Nextleaf hostname in Safari settings. This
   does not delete server tasks.
+
+### Remove Nextleaf from a Mac
+
+1. Quit Nextleaf with **Command-Q**. Stop development instances with **Control-C**
+   in their Terminal and stop any client that launches `Nextleaf --mcp`.
+2. In Finder, move **Applications → Nextleaf.app** to the Trash. Remove any other
+   old test copies of the app as well.
+3. Press **Shift-Command-G** in Finder and open `~/Library/Application Support/`.
+   Move only the **dev.taskmanager.desktop** folder to the Trash. This removes
+   local tasks, sync state, and SQLite companion files. If Settings showed a
+   custom data location, clear that location instead.
+4. Open `~/Library/WebKit/` and `~/Library/Caches/` the same way. In each folder,
+   remove **dev.taskmanager.desktop** if it exists, to clear stored UI state.
+5. Eject any mounted Nextleaf installer disk image. The downloaded DMG itself is
+   optional to keep; do not launch an old app copy before the clean installation.
+
+Removing the app alone leaves the local task database behind. Deleting the folders
+above also removes unsynced Mac edits; it does not delete tasks on the server.
+Keep your source checkout: it is separate from the installed app and its local data.
 
 Keep Docker, Tailscale, other applications, and the source repository. Start the
 new empty Pi first, connect a fresh Mac app next, and add the iPhone last.

@@ -9,8 +9,19 @@ history available in Git.
 Published the public **0.1.0 installation-test prerelease**, GPL-3.0-only, with
 English repository/application text, Linux ARM64/AMD64 images, versioned Compose
 files, an unsigned Apple Silicon DMG, corresponding source, and checksums.
-The local checkout is `Nextleaf`. The owner will perform the later empty-device
-installation test using INSTALLATION.md. Do not reset existing installations now.
+The local checkout is `Nextleaf`. The owner has begun the clean-install walkthrough.
+The screenshot confirms removal of the pi7 container/network, old configuration/data,
+and pi7 image. Older Nextleaf images were listed; their removal and the release-file
+download/checksum step have not yet been confirmed. Mac/iPhone reset is still pending.
+
+The owner clarified the common storage layout using the existing Immich specification:
+configuration in `/opt/nextleaf-app/`, persistent data in `/srv/nextleaf/`.
+INSTALLATION, DEPLOYMENT, and STORAGE now document those paths and backup scope.
+Release 0.1.0 downloads retain their original checksums; explicitly override
+`NEXTLEAF_DATA_DIR` as shown in the current guide. Next release templates should use
+the new defaults. A read-only Compose configuration check on the Pi confirmed
+`/srv/nextleaf` mounts at `/data`; documentation shell syntax and relative guide
+links passed. No fresh server has yet been verified under the new host paths.
 
 ## Release verification
 
@@ -63,7 +74,7 @@ test or a complete download-to-clean-Pi installation.
 
 ## Next acceptance steps
 
-1. Owner removes old Pi/Mac/iPhone test installations and local replicas.
+1. Finish the owner-led cleanup and verify release downloads; reset old Mac/iPhone replicas.
 2. Owner follows the guide: empty Pi, native Mac, then iPhone web.
 3. Check persistence, offline desktop edits, reconnection, concurrent edit conflicts,
    real Safari keyboard/landscape, and Home Screen behavior.

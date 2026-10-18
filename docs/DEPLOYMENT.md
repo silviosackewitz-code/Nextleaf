@@ -7,9 +7,9 @@ covers runtime layout, normal updates, backups, and the historical Pi test path.
 
 | Location | Purpose |
 | --- | --- |
-| `/etc/nextleaf/docker-compose.yml` | Download-release Compose configuration |
-| `/etc/nextleaf/.env` | Image version, host data path, optional MCP token; mode 0600 |
-| `/var/lib/nextleaf` | Persistent SQLite database and companion files; UID/GID 10001 |
+| `/opt/nextleaf-app/docker-compose.yml` | Download-release Compose configuration |
+| `/opt/nextleaf-app/.env` | Image version, host data path, optional MCP token; mode 0600 |
+| `/srv/nextleaf` | Persistent SQLite database and companion files; UID/GID 10001 |
 | `127.0.0.1:8787` | Host-only HTTP endpoint |
 | Tailscale Serve | Private HTTPS proxy on the host |
 
@@ -23,6 +23,11 @@ no-new-privileges, bounded temporary storage, and rotated logs. Precreate the bi
 mount with correct ownership; Compose does not create it implicitly. A health
 check probes `/api/health`. Healthy runtime alone does not establish sync correctness.
 
+The layout follows [STORAGE.md](STORAGE.md): back up both `/opt/nextleaf-app/`
+and a consistent copy of `/srv/nextleaf/`. The published 0.1.0 environment template
+uses the previous default; set `NEXTLEAF_DATA_DIR=/srv/nextleaf` before starting.
+Compose resolves the explicit environment value in preference to its older fallback.
+
 ## Normal updates
 
 1. Stop clients and make a consistent backup with the current version/config.
@@ -32,9 +37,9 @@ check probes `/api/health`. Healthy runtime alone does not establish sync correc
 4. Select the new exact image version or digest in `.env`, then run:
 
 ```bash
-sudo docker compose --env-file /etc/nextleaf/.env -f /etc/nextleaf/docker-compose.yml config --quiet
-sudo docker compose --env-file /etc/nextleaf/.env -f /etc/nextleaf/docker-compose.yml pull
-sudo docker compose --env-file /etc/nextleaf/.env -f /etc/nextleaf/docker-compose.yml up -d --wait
+sudo docker compose --env-file /opt/nextleaf-app/.env -f /opt/nextleaf-app/docker-compose.yml config --quiet
+sudo docker compose --env-file /opt/nextleaf-app/.env -f /opt/nextleaf-app/docker-compose.yml pull
+sudo docker compose --env-file /opt/nextleaf-app/.env -f /opt/nextleaf-app/docker-compose.yml up -d --wait
 curl --fail http://127.0.0.1:8787/api/health
 ```
 
@@ -52,17 +57,20 @@ use a proper SQLite online backup. Copying only a live main `.db` can omit WAL
 transactions. Save the matching Compose file, protected `.env`, image version/
 digest, and release source reference. Protect backup secrets like the originals.
 
-A simple stopped-service backup for the default data path:
+A simple stopped-service backup for the agreed data path:
 
 ```bash
 NEXTLEAF_BACKUP_DIR="/var/backups/nextleaf/$(date -u +%Y%m%dT%H%M%SZ)"
 sudo install -d -m 0700 "$NEXTLEAF_BACKUP_DIR"
-sudo docker compose --env-file /etc/nextleaf/.env -f /etc/nextleaf/docker-compose.yml stop
-sudo cp -a /var/lib/nextleaf "$NEXTLEAF_BACKUP_DIR/data"
-sudo cp -a /etc/nextleaf "$NEXTLEAF_BACKUP_DIR/config"
-sudo docker compose --env-file /etc/nextleaf/.env -f /etc/nextleaf/docker-compose.yml start
+sudo docker compose --env-file /opt/nextleaf-app/.env -f /opt/nextleaf-app/docker-compose.yml stop
+sudo cp -a /srv/nextleaf "$NEXTLEAF_BACKUP_DIR/data"
+sudo cp -a /opt/nextleaf-app "$NEXTLEAF_BACKUP_DIR/config"
+sudo docker compose --env-file /opt/nextleaf-app/.env -f /opt/nextleaf-app/docker-compose.yml start
 ```
 
+This creates a local staging backup on the same server; copy it to a separate
+backup destination to protect against failure of the server disk. No scheduled
+backup or remote storage job is configured by these commands.
 Adjust the data path if configured differently. Confirm every copy succeeded and
 that the service is healthy afterward. Test restoration into a separate directory
 and isolated port using the matching version before relying on a backup. Restore
@@ -72,8 +80,8 @@ on the owner's Pi has not yet been completed.
 ## Historical local-build Pi releases
 
 The original path uses root `compose.yaml` plus `deploy/.env.example`, locally
-built `nextleaf:pi*` images, and `/etc/nextleaf/compose.yaml` on the server. It is
-separate from the downloadable release path. Do not substitute an update package
+built `nextleaf:pi*` images, `/etc/nextleaf/compose.yaml`, and `/var/lib/nextleaf`
+on the server. It is separate from the downloadable release path. Do not substitute an update package
 for a fresh installer or run both Compose configurations on the same port/data.
 
 | Stage | Purpose / evidence |
@@ -88,8 +96,10 @@ for a fresh installer or run both Compose configurations on the same port/data.
 
 The owner ran the pi7 updater and reported `NEXTLEAF_UPDATE_OK`; subsequent
 health and API checks confirmed tag-management and sync-v2. A disposable database
-on the Mac was used for offline/MCP/sync verification. The current release work
-has not reset or replaced the owner's Pi installation.
+on the Mac was used for offline/MCP/sync verification. The owner subsequently
+removed the old pi7 container, configuration, data, and
+pi7 image during the clean-install walkthrough. Installation under the new
+`/opt/nextleaf-app` and `/srv/nextleaf` layout is still pending.
 
 The pi7 update package was staged under `data/update-tags-20261018` locally and
 `~/nextleaf-update-tags-20261018` on the Pi. Its backup lives under

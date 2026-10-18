@@ -89,7 +89,7 @@ Historical reference documentation:
 ## Operational check
 
 ```bash
-python3 deploy/check_mcp.py --env-file /etc/nextleaf/.env
+python3 deploy/check_mcp.py --env-file /opt/nextleaf-app/.env
 ```
 
 With permission to read the secret file, this checks local HTTP authentication,

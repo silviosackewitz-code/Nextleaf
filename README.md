@@ -6,6 +6,11 @@ Keep your tasks on your own server. Use the Mac app with a local database, work
 when the server is unavailable, and sync when you reconnect. On iPhone, use the
 responsive web interface in Safari or add it to your Home Screen.
 
+Nextleaf follows Getting Things Done (GTD): capture ideas in Inbox, organize them
+into projects and areas, and choose what to do next using tags, dates, time, and
+energy. Run the server with Docker Compose on a Raspberry Pi or Linux machine;
+install the native macOS client from a DMG and use Safari on iPhone.
+
 Nextleaf is open source under the **GNU GPL v3.0**.
 
 ## Install
@@ -26,6 +31,19 @@ Server images target **Linux ARM64 and AMD64**.
 The server currently has no web login. Keep it on a trusted private network;
 the supplied Compose file binds to loopback and the guide uses Tailscale Serve.
 The iPhone web interface requires an available server. It is not an offline app.
+
+## Where your data lives
+
+| Server folder | Contents | Backup |
+| --- | --- | --- |
+| `/opt/nextleaf-app/` | Docker Compose configuration and `.env` | Entire folder, including secrets |
+| `/srv/nextleaf/` | Persistent SQLite task database | Consistent copy of the entire folder |
+
+The [installation guide](docs/INSTALLATION.md) sets these paths explicitly for
+release 0.1.0. Docker images can be downloaded again. See the
+[backup instructions](docs/DEPLOYMENT.md#consistent-backup-and-restore) before
+copying a running database. For a clean restart, follow the
+[removal steps](docs/INSTALLATION.md#8-remove-the-old-test-installation-before-starting-over).
 
 ## Features
 
@@ -81,7 +99,8 @@ establish signing, notarization, or compatibility on untested platforms.
 
 ## Documentation
 
-- [Installation](docs/INSTALLATION.md) and [deployment/backup](docs/DEPLOYMENT.md)
+- [Installation](docs/INSTALLATION.md), [storage and backup scope](docs/STORAGE.md),
+  and [deployment/backup](docs/DEPLOYMENT.md)
 - [Requirements](docs/SPECIFICATION.md) and [architecture](docs/ARCHITECTURE.md)
 - [Decisions](docs/DECISIONS.md) and [current status](docs/NEXT_STEPS.md)
 - [MCP integration](docs/MCP.md) and [one-time Nirvana import](docs/NIRVANA_IMPORT.md)

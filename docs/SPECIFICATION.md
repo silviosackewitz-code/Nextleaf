@@ -115,9 +115,17 @@ does not change a project's mode or skip a blocking Waiting action.
 ## Desktop, server, and mobile
 
 Server target: Raspberry Pi 5, 64-bit Ubuntu 24.04 LTS, Docker Compose. Also ship
-Linux AMD64 images. Keep config in `/etc/nextleaf`, data in `/var/lib/nextleaf`,
+Linux AMD64 images. Keep config in `/opt/nextleaf-app`, data in `/srv/nextleaf`,
 Tailscale on the host, and container HTTP bound to host loopback. No public
 unauthenticated REST/sync access. MCP authentication is separate.
+
+Follow the owner's common application storage policy: `/opt/<app>-app/` contains
+Compose and `.env`, `/srv/<app>/` contains persistent application data, and Docker
+manages its own replaceable image/container storage. Document backup scope for
+every app. For Nextleaf, back up the complete configuration directory and a
+consistent SQLite data directory. The existing Immich layout is the reference;
+this decision does not authorize migrating other installed applications. See
+[STORAGE.md](STORAGE.md).
 
 Desktop embeds the shared backend and stores locally. Bidirectional sync runs
 against the private server, with a baseline, stable identity, and explicit
