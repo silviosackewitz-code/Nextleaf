@@ -4,7 +4,7 @@ Updated: 2026-10-18. Historical duplicate status notes have been consolidated;
 requirements and reasons remain in SPECIFICATION and DECISIONS, with original
 history available in Git.
 
-## Scheduling and Contacts update 0.1.1 — in preparation
+## Scheduling and Contacts update 0.1.1 — published, owner update pending
 
 The owner explicitly requested both Start Date and Make Repeating through State →
 Scheduled, no More options disclosure, Waiting contact choices, and travel-aware
@@ -21,8 +21,16 @@ The final 0.1.1 Apple Silicon DMG passed image integrity and strict deep ad-hoc
 signature verification. Its mounted app upgraded an isolated copy of the existing
 desktop database: every old entity field, relation, import receipt and connection
 was preserved; SQLite integrity, foreign keys and protocol-3 migration passed.
-The earlier Contacts-only DMG is superseded and must not be published. Linux
-images, release packaging, and actual owner update acceptance remain.
+Release v0.1.1 is published with the Mac DMG, corresponding source, Compose
+configuration, license notices and checksums. Native ARM64 and AMD64 container
+builds passed fresh-install, API/MCP, repeat generation, recreation persistence
+and in-place update checks from 0.1.0. Anonymous release downloads and public
+GHCR installs passed on both architectures; all eight downloaded payload hashes
+match the published checksum file.
+
+Verification runs: [containers and update](https://github.com/silviosackewitz-code/Nextleaf/actions/runs/39176317896)
+and [public installation](https://github.com/silviosackewitz-code/Nextleaf/actions/runs/39176765491).
+The earlier Contacts-only DMG is superseded. Actual owner update acceptance remains.
 Installed Mac and Pi still run 0.1.0. All real data remains untouched by the new
 scheduling tests, which use isolated databases.
 
@@ -52,8 +60,9 @@ Areas without partial writes. Private source snapshots, backups, and verificatio
 receipts are outside the repository and must never be published.
 
 The installed revision-3 app and 0.1.0 container are unchanged and still expose
-13 tools. Import used a current local development executable sharing the desktop
-database; no new installer or container release was published. Third-party client
+13 tools. Import used a local development executable sharing the desktop
+database. No release was published at the time of import; 0.1.1 now includes
+that fourteenth tool as recorded above. Third-party client
 registration remains separate. Recurring source templates retain their status but
 cannot generate occurrences without a complete source rule. Import receipts remain
 local-only; preserve the importing desktop database for safe retries.

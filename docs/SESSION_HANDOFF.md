@@ -16,7 +16,7 @@ Installation revision 3 contains the repaired ad-hoc-signed Mac DMG. Detailed
 remaining acceptance checks are in NEXT_STEPS. Test tasks remain disposable.
 No Apple Developer membership/certificate is available; do not claim notarization.
 
-## Scheduling and Contacts update 0.1.1 — in preparation
+## Scheduling and Contacts update 0.1.1 — published, owner update pending
 
 The owner explicitly requested both Start Date and Make Repeating through State →
 Scheduled, no More options disclosure, Waiting contact choices, and travel-aware
@@ -33,8 +33,16 @@ The final 0.1.1 Apple Silicon DMG passed image integrity and strict deep ad-hoc
 signature verification. Its mounted app upgraded an isolated copy of the existing
 desktop database: every old entity field, relation, import receipt and connection
 was preserved; SQLite integrity, foreign keys and protocol-3 migration passed.
-The earlier Contacts-only DMG is superseded and must not be published. Linux
-images, release packaging, and actual owner update acceptance remain.
+Release v0.1.1 is published with the Mac DMG, corresponding source, Compose
+configuration, license notices and checksums. Native ARM64 and AMD64 container
+builds passed fresh-install, API/MCP, repeat generation, recreation persistence
+and in-place update checks from 0.1.0. Anonymous release downloads and public
+GHCR installs passed on both architectures; all eight downloaded payload hashes
+match the published checksum file.
+
+Verification runs: [containers and update](https://github.com/silviosackewitz-code/Nextleaf/actions/runs/39176317896)
+and [public installation](https://github.com/silviosackewitz-code/Nextleaf/actions/runs/39176765491).
+The earlier Contacts-only DMG is superseded. Actual owner update acceptance remains.
 Installed Mac and Pi still run 0.1.0. All real data remains untouched by the new
 scheduling tests, which use isolated databases.
 
@@ -52,9 +60,9 @@ records and skipped all 130. Every persistent entity field and tag association
 matched between desktop and Pi after background sync. Nirvana was not modified.
 No post-import iPhone screen inspection or third-party client registration occurred.
 
-Existing public binaries still expose 13 tools; the development executable used
-for import exposes 14 and shares the local desktop DB. No new installer/image was
-published. Preserve the working installation and local-only import receipts. Do
+At the time of the import, public binaries exposed 13 tools and the development
+executable exposed 14 while sharing the local desktop DB. Release 0.1.1 now
+includes that fourteenth tool; see the release verification above. Preserve the working installation and local-only import receipts. Do
 not reimport into a separate replica without those receipts. See NEXT_STEPS for
 verification and NIRVANA_IMPORT for mapping/recurrence limitations.
 
