@@ -19,7 +19,7 @@ jobs:
         run: |
           mkdir release-check
           cd release-check
-          BASE=https://github.com/silviosackewitz-code/Nextleaf/releases/download/install-v0.1.0-r3
+          BASE=https://github.com/silviosackewitz-code/Nextleaf/releases/download/v0.1.1
           wget --https-only "$BASE/docker-compose.yml" "$BASE/example.env" "$BASE/SHA256SUMS"
           sha256sum --check --ignore-missing SHA256SUMS
           cmp docker-compose.yml ../deploy/release/docker-compose.yml
@@ -28,7 +28,7 @@ jobs:
           python3 - <<'PYCONFIG'
           import json
           config = json.load(open('config.json'))['services']['nextleaf']
-          assert config['image'] == 'ghcr.io/silviosackewitz-code/nextleaf:0.1.0'
+          assert config['image'] == 'ghcr.io/silviosackewitz-code/nextleaf:0.1.1'
           mount = next(v for v in config['volumes'] if v['target'] == '/data')
           assert mount['source'] == '/srv/nextleaf'
           # Compose versions may omit false fields from normalized JSON.
@@ -38,6 +38,6 @@ jobs:
         shell: bash
         run: |
           export DOCKER_CONFIG="$(mktemp -d)"
-          IMAGE=ghcr.io/silviosackewitz-code/nextleaf:0.1.0
+          IMAGE=ghcr.io/silviosackewitz-code/nextleaf:0.1.1
           docker pull "$IMAGE"
           python3 deploy/check_container.py --image "$IMAGE"

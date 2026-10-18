@@ -26,7 +26,9 @@ The user approved compact rows, inline details, quick menus, and New Item task/
 project/tag destinations. Later screenshots clarified two-line titles and separate
 metadata, superseding strict single-line rows. Desktop submenus should open left,
 category hover should work, and direct choices should save immediately. Keep five
-primary editor fields and move the others under More options.
+primary editor fields. The 2026-10-18 follow-up supersedes the earlier More options
+disclosure: State → Scheduled now contains Start Date and Make Repeating, and
+State → Waiting contains contacts. See SPECIFICATION for the current requirement.
 
 Nextleaf's completed-row policy is now explicit: retain locally until view change/
 refresh, while saving completion immediately. Group nonempty projects, show standalone

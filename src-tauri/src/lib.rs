@@ -153,6 +153,7 @@ pub fn run() {
                 let pool = nextleaf_server::create_pool(&directory.join("nextleaf.db"))
                     .await
                     .map_err(|e| e.to_string())?;
+                tokio::spawn(nextleaf_server::schedule::run(pool.clone()));
                 tokio::spawn(background_sync(
                     pool.clone(),
                     Arc::new(Mutex::new(())),
@@ -182,6 +183,7 @@ pub fn run() {
                 sync_lock: lock.clone(),
                 data_dir: directory,
             });
+            tauri::async_runtime::spawn(nextleaf_server::schedule::run(pool.clone()));
             tauri::async_runtime::spawn(background_sync(pool, lock, Some(app.handle().clone())));
             Ok(())
         })

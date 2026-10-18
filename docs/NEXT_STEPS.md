@@ -4,6 +4,28 @@ Updated: 2026-10-18. Historical duplicate status notes have been consolidated;
 requirements and reasons remain in SPECIFICATION and DECISIONS, with original
 history available in Git.
 
+## Scheduling and Contacts update 0.1.1 — in preparation
+
+The owner explicitly requested both Start Date and Make Repeating through State →
+Scheduled, no More options disclosure, Waiting contact choices, and travel-aware
+system timezones. These are implemented in current source with sync protocol 3.
+The existing two-contact correction is preserved, including verified Pi sync.
+The shared importer remains available as the fourteenth MCP tool.
+
+Current checks: 41 frontend tests, 38 backend tests including scheduling, timezone,
+protocol migration, repeat sync and HTTP sync, plus the TypeScript/Vite build pass.
+Desktop-width browser checks passed for draft scheduling and immediate repeating;
+390px checks reached the repeat editor and Cancel returned without changing the
+parent draft. This is not a physical iPhone or Safari keyboard acceptance test.
+The final 0.1.1 Apple Silicon DMG passed image integrity and strict deep ad-hoc
+signature verification. Its mounted app upgraded an isolated copy of the existing
+desktop database: every old entity field, relation, import receipt and connection
+was preserved; SQLite integrity, foreign keys and protocol-3 migration passed.
+The earlier Contacts-only DMG is superseded and must not be published. Linux
+images, release packaging, and actual owner update acceptance remain.
+Installed Mac and Pi still run 0.1.0. All real data remains untouched by the new
+scheduling tests, which use isolated databases.
+
 ## Completed owner-requested MCP import
 
 On 2026-10-18, the owner requested a complete fresh Nirvana import through local
@@ -136,7 +158,7 @@ the check was corrected before publishing any images or the release.
 ## Verified before release packaging
 
 - Pi7 updater completed with `NEXTLEAF_UPDATE_OK`; server health includes
-  `tag-management` and `sync-v2`.
+  `tag-management`, `sync-v3`, and `scheduling`.
 - Shared tag/People/Area operations, archive/restore, stable links, stale-edit
   protection, and sync v2 are integrated in backend, desktop, web, and MCP.
 - Isolated Mac verification covered local persistence, offline operation, stdio

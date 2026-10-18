@@ -44,8 +44,10 @@ Logbook is newest completion first. No completion banner is required.
 
 On desktop, clicking a title expands an inline editor, with only one task open.
 Keep title, notes, tags, and Focus together; show Time, Energy, Due, State, and
-Project as the five primary properties. Put additional properties such as Starts
-and Waiting for under More options. Hide the completion control while editing.
+Project as the five primary properties. State owns nested Scheduled and Waiting
+choices; do not add a More options disclosure for these fields. Scheduled offers
+Start Date and Make Repeating. Waiting offers contacts and free text. Hover, click,
+keyboard, and touch must all reach these choices; touch uses an inline Back action. Hide the completion control while editing.
 Save changes and Cancel are explicit. Protect unsaved drafts from silent loss;
 return focus to the title on close. Preserve error messages and edits on failed saves.
 
@@ -71,6 +73,35 @@ Dates retain `YYYY-MM-DD` precision without invented times. The shared month
 calendar updates a form draft, or saves immediately from quick actions; support
 removing dates. Ordinary select fields remain accessible native controls.
 
+## Scheduling and repeating tasks
+
+Start Date atomically sets Scheduled and the date. Cancelling its calendar changes
+nothing; removing the date returns the task to Next. A scheduled task becomes Next
+and gains Focus on its start day, while Sequential/project eligibility still applies.
+Due Date remains independent of start scheduling.
+
+Make Repeating configures a daily, weekly, monthly, or yearly calendar cycle with
+an interval, first date, optional inclusive end date, and optional due dates with
+0–365 days of advance notice. Monthly/yearly cycles retain the anchor day, clamping
+shorter months. The template remains in Scheduled; occurrences are separate Next,
+focused tasks carrying notes, project, Area, effort, contact, and tags. Completion
+of a copy does not control the next calendar occurrence. Existing imported
+recurring templates stay inert until the owner explicitly supplies a rule.
+
+Pause stops generation, Resume catches up missed dates, and Stop Repeating converts
+the template to a normal Next task. Existing copies are never deleted or recreated,
+including copies in Trash. Editing a cycle keeps its identity; already-created
+copies retain their content. A changed date may create a new future occurrence.
+Catch-up is bounded to 100 new tasks per pass. Supported dates start at 1900.
+
+Time zones follow travel: the foreground Mac/iPhone reports its system IANA time
+zone when opened, focused, or changed. The most recently active client wins and the
+Pi retains that zone while clients are closed. No location permission or geolocation
+is used. A connected Mac delegates activation to the Pi, including while offline;
+a standalone Mac handles it locally. On reconnect, due tasks catch up. Nothing is
+activated before a client first supplies its zone. Simultaneously active devices
+in different zones use the latest report; already-activated tasks are not reverted.
+
 ## Projects
 
 The overview contains active, someday, and completed projects, including empty
@@ -83,13 +114,14 @@ Inline project properties include name, notes, tags, Area, due date, status,
 Parallel/Sequential mode, and Focus. Completing a project does not silently
 complete its child tasks. Manual reordering is not yet a completed feature.
 
-## Areas, People, Tags, and filters
+## Areas, Contacts, Tags, and filters
 
-Settings → Manage Tags has distinct Areas, People, and Tags sections. People are
-a real tag kind, not a tag named People. Rename, change kind, archive, and restore
+Settings → Manage Tags has distinct Areas, Contacts, and Tags sections. Contacts include
+people and organizations and are a real tag kind, not a tag named People. Rename, change kind, archive, and restore
 without losing task/project links. Do not automatically reclassify existing tags.
-Person renames update exactly matching Waiting-for text, while unrelated free text
-stays unchanged. Make the same operations available through MCP and desktop sync.
+Contact renames update exactly matching Waiting-for text, while unrelated free text
+stays unchanged. Keep the task field label Waiting for. Preserve the existing
+`person` wire/storage value for compatibility. Make the same operations available through MCP and desktop sync.
 
 Waiting highlights the contact before the task title and offers contacts in its
 filter bar, alongside relevant Areas and ordinary Tags. Preserve existing free-text

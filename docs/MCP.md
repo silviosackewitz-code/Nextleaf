@@ -14,10 +14,10 @@ does not push live updates into every visible client.
 | Scope | Tools |
 | --- | --- |
 | Areas | `list_areas`, `create_area`, `update_area` |
-| Tags and People | `list_tags`, `create_tag`, `update_tag` |
+| Tags and Contacts | `list_tags`, `create_tag`, `update_tag` |
 | Projects | `list_projects`, `create_project`, `update_project` |
 | Tasks | `list_tasks`, `get_task`, `create_task`, `update_task` |
-| Import | `import_nirvana` (development builds after installation revision 3) |
+| Import | `import_nirvana` (0.1.1 and newer) |
 
 The 13 editing/query tools cover implemented data operations: project mode/state/Focus/tags/
 due date, task fields and assignments, completion/reopening/trash, and Area/tag
@@ -32,13 +32,13 @@ values fail atomically rather than overwriting newer edits. Validation failures
 are tool errors and must not partly mutate data.
 
 Tag lists include `{id,name,kind,archived}`, including archived entries. `kind` is
-`tag` (default) or `person`. `update_tag` changes name/kind/archive; `update_area`
+`tag` (default) or `person` (a Contact in the UI). `update_tag` changes name/kind/archive; `update_area`
 changes name/archive. Existing links survive archive and rename; new direct
 assignments to archived records fail. Duplicate names are not silently merged.
-A person rename updates exactly matching old Waiting-for text, preserving other
-free text. Old tags are not automatically reclassified as People.
+A contact rename updates exactly matching old Waiting-for text, preserving other
+free text. Old tags are not automatically reclassified as Contacts.
 
-Task REST/MCP payloads retain tag names for compatibility; sync protocol 2 uses
+Task REST/MCP payloads retain tag names for compatibility; sync protocol 3 uses
 stable IDs to preserve associations. Local v1 baselines migrate at startup.
 Update server before clients; incompatible protocol requests fail without mutation.
 
@@ -48,7 +48,7 @@ connection settings are not controlled by the central MCP server.
 
 ## One-time Nirvana import
 
-Current source builds also expose `import_nirvana`, reusing the CLI importer in
+Version 0.1.1 and newer expose `import_nirvana`, reusing the CLI importer in
 `backend/src/nirvana.rs`. Pass a complete `nirvana-mcp-v1` snapshot as the tool
 arguments: `format`, `total`, `has_more`, `tags`, and `items`. Read every source
 page with notes included and verify completeness before constructing this envelope.
@@ -60,10 +60,9 @@ changed source records are rejected to protect local edits. Existing archived or
 incompatible tag names require resolution before import. See
 [Nirvana import](NIRVANA_IMPORT.md) for mapping and limits.
 
-The published 0.1.0 server image and revision-3 DMG still expose 13 tools; this
-additional tool requires a new source build. Using a local development executable
-with `--mcp` can import into the same desktop database without replacing the app.
-The existing app and Pi can display and synchronize those imported records.
+The older 0.1.0 server image and revision-3 DMG expose 13 tools. Version 0.1.1
+adds this tool without changing the database schema or sync protocol. Existing
+0.1.0 clients can still display and synchronize imported records.
 
 ## Server authentication
 
@@ -118,3 +117,17 @@ call. It prints neither the secret nor task contents and makes no data changes.
 Alternatively supply the token via environment and select an endpoint with `--url`.
 Redirects are not followed. Isolated protocol/domain tests and the release container
 check are separate from real third-party client acceptance. See NEXT_STEPS.
+
+## Scheduling in 0.1.1
+
+`update_task` accepts `recurrence` as a validated object with `id` (UUID),
+`frequency` (`daily`, `weekly`, `monthly`, `yearly`), `interval` (1–1000),
+`start` (YYYY-MM-DD), nullable `until`, nullable `due_days` (0–365), and `paused`.
+Setting a rule atomically makes a recurring template. Setting `recurrence: null`
+exits a cycle. Use `status: scheduled` and `defer_until` together for a start date;
+clear the date when deliberately returning to Next. Expected-value guards support
+repeat rules. Import never infers rules missing from Nirvana.
+
+The foreground application reports its system timezone to `/api/schedule/timezone`.
+A headless standalone MCP database needs that initial timezone report before
+schedules run. Connected desktop MCP delegates execution to the Pi.

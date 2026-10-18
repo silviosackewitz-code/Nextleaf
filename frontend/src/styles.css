@@ -138,8 +138,6 @@ button:disabled{cursor:default;opacity:.55}
 .menunote{padding:4px 8px;color:#6d858a}
 @media(max-width:720px){.taskcontext{display:none}.task:not(.expanded) .taskmeta{max-width:35%}.task:not(.expanded) .taskbody{gap:6px}.taskmenutrigger{width:22px}.noteslabel textarea{min-height:100px}}
 
-.moreproperties{grid-column:1/-1;font-size:12px;color:#607c81;margin-top:4px}
-.moreproperties summary{cursor:pointer;padding:6px 0}
 .secondaryfields{display:grid;gap:6px;margin-top:6px}
 .newitemtrigger{display:flex;align-items:center;gap:8px;padding:7px 10px;border:1px solid #d4e1e3;border-radius:5px;background-color:white;color:#285c67;font-size:13px;white-space:nowrap}
 .newitemmenu{position:fixed;inset:auto;margin:0;width:220px;max-width:calc(100vw - 24px);max-height:calc(100dvh - 100px);overflow:auto;padding:7px;border:1px solid #d4e1e3;border-radius:7px;background:white;color:#283c43;box-shadow:0 10px 35px #14333e33}
@@ -325,7 +323,6 @@ h1{font-size:24px;margin:0}
   .editorsheet .noteslabel{font-size:13px}
   .editorsheet .noteslabel textarea{font-size:16px;line-height:1.5;height:160px;min-height:110px;background:white;padding:12px}
   .editorsheet .taskdetails .detailfields input,.editorsheet .taskdetails .detailfields select,.editorsheet .datefield{height:48px;min-height:48px;font-size:16px;background-color:white;padding-top:10px;padding-bottom:10px}
-  .editorsheet .moreproperties summary{min-height:44px;padding:12px 0;font-size:16px}
   .editorsheet .tageditor{padding:8px;min-height:48px;background:white;align-items:center}
   .editorsheet .tagentry input{font-size:16px;min-height:44px}
   .editorsheet .tagarea{width:44px;min-height:44px;height:44px}
@@ -409,3 +406,14 @@ h1{font-size:24px;margin:0}
 .projectrow:not(.expanded){flex-wrap:wrap}
 .projectrow>.tasknotepreview{flex:1 0 calc(100% - 28px);margin-left:26px;max-width:calc(100% - 26px)}
 @media(max-width:720px),(pointer:coarse) and (max-width:1024px){.projectrow>.tasknotepreview{grid-column:2/-1;margin-left:0;max-width:100%}}
+
+/* State owns scheduling and waiting details in both editing surfaces. */
+.statefield{display:flex;justify-content:space-between;width:100%;height:auto;min-height:32px;white-space:normal;text-align:left}
+.statemenu{width:220px}
+.repeatform{display:grid;gap:12px;min-width:250px;max-width:420px}
+.repeatform label{display:grid;gap:6px}
+.repeatform input,.repeatform select{font:inherit;padding:8px;border:1px solid #d4e1e3;border-radius:5px;width:100%}
+.repeatform .repeatcheck{display:flex;align-items:center}.repeatcheck input{width:auto}
+@media(max-width:720px){.statefield,.statemenu button{min-height:44px;font-size:16px}.repeatform input,.repeatform select{min-height:44px;font-size:16px}}
+
+@media(max-width:720px){.repeatform .datefield,.repeatform .repeatcheck{min-height:44px;font-size:16px}}

@@ -83,8 +83,11 @@ export function taskGroups(tasks: Task[], projects: Project[], projectId: string
     return Object.entries(labels).map(([id, title]) => ({ id, title, tasks: tasks.filter(task => task.status === id) })).filter(group => group.tasks.length);
   }
   if (view === 'scheduled') {
-    const dates = [...new Set(tasks.map(task => task.defer_until?.slice(0, 10) ?? ''))].sort((a, b) => !a ? 1 : !b ? -1 : a.localeCompare(b));
-    return dates.map(date => ({ id: `date:${date}`, title: date || 'No start date', tasks: tasks.filter(task => (task.defer_until?.slice(0, 10) ?? '') === date) }));
+    const dates = [...new Set(tasks.filter(task => task.status !== 'recurring').map(task => task.defer_until?.slice(0, 10) ?? ''))].sort((a, b) => !a ? 1 : !b ? -1 : a.localeCompare(b));
+    const groups = dates.map(date => ({ id: `date:${date}`, title: date || 'No start date', tasks: tasks.filter(task => task.status !== 'recurring' && (task.defer_until?.slice(0, 10) ?? '') === date) }));
+    const repeating = tasks.filter(task => task.status === 'recurring');
+    if (repeating.length) groups.push({ id: 'repeating', title: 'Repeating', tasks: repeating });
+    return groups;
   }
   return tasks.length ? [{ id: 'all', title: view === 'waiting' ? 'Waiting for' : null, tasks }] : [];
 }

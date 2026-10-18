@@ -16,6 +16,28 @@ Installation revision 3 contains the repaired ad-hoc-signed Mac DMG. Detailed
 remaining acceptance checks are in NEXT_STEPS. Test tasks remain disposable.
 No Apple Developer membership/certificate is available; do not claim notarization.
 
+## Scheduling and Contacts update 0.1.1 — in preparation
+
+The owner explicitly requested both Start Date and Make Repeating through State →
+Scheduled, no More options disclosure, Waiting contact choices, and travel-aware
+system timezones. These are implemented in current source with sync protocol 3.
+The existing two-contact correction is preserved, including verified Pi sync.
+The shared importer remains available as the fourteenth MCP tool.
+
+Current checks: 41 frontend tests, 38 backend tests including scheduling, timezone,
+protocol migration, repeat sync and HTTP sync, plus the TypeScript/Vite build pass.
+Desktop-width browser checks passed for draft scheduling and immediate repeating;
+390px checks reached the repeat editor and Cancel returned without changing the
+parent draft. This is not a physical iPhone or Safari keyboard acceptance test.
+The final 0.1.1 Apple Silicon DMG passed image integrity and strict deep ad-hoc
+signature verification. Its mounted app upgraded an isolated copy of the existing
+desktop database: every old entity field, relation, import receipt and connection
+was preserved; SQLite integrity, foreign keys and protocol-3 migration passed.
+The earlier Contacts-only DMG is superseded and must not be published. Linux
+images, release packaging, and actual owner update acceptance remain.
+Installed Mac and Pi still run 0.1.0. All real data remains untouched by the new
+scheduling tests, which use isolated databases.
+
 ## Completed MCP import
 
 The owner requested all Nirvana tasks/projects through local MCP and selected

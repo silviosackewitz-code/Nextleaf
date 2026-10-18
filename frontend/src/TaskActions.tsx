@@ -1,4 +1,5 @@
 import DateField from './DateField';
+import StateField from './StateField';
 import { useId, useLayoutEffect, useRef, useState, type KeyboardEvent } from 'react';
 import type { Area, Project, Task } from './api';
 import { propertyGroups, type PropertyGroup } from './TaskFields';
@@ -18,13 +19,11 @@ export default function TaskActions({ task, projects, areas, knownTags, people, 
   const [datePicker, setDatePicker] = useState<{ field: 'due_date' | 'defer_until'; label: string; anchor: { right: number; bottom: number } } | null>(null);
   const [error, setError] = useState(false);
   const [activeGroup, setActiveGroup] = useState<PropertyGroup | 'Tags' | null>(null);
-  const [text, setText] = useState('');
   function openGroup(group: PropertyGroup | 'Tags', button: HTMLButtonElement, focus = false) {
     if (saving.current) return;
     activeButton.current = button;
     focusSubmenu.current = focus;
     if (group === activeGroup && focus) submenu.current?.querySelector<HTMLElement>('button:not(:disabled),input')?.focus();
-    setText(group === 'Due' ? task.due_date?.slice(0, 10) ?? '' : group === 'Starts' ? task.defer_until?.slice(0, 10) ?? '' : task.waiting_for ?? '');
     setActiveGroup(group);
   }
   useLayoutEffect(() => {
@@ -58,7 +57,7 @@ export default function TaskActions({ task, projects, areas, knownTags, people, 
     buttons[event.key === 'Home' ? 0 : event.key === 'End' ? buttons.length - 1 : (index + (event.key === 'ArrowDown' ? 1 : -1) + buttons.length) % buttons.length]?.focus();
   }
   const choices = activeGroup ? quickChoices(activeGroup, task, projects, areas, knownTags, people) : [];
-  const field = activeGroup === 'Due' ? 'due_date' : activeGroup === 'Starts' ? 'defer_until' : 'waiting_for';
+  const field = 'due_date';
   return <>
     <button className="taskmenutrigger" aria-label={`Actions for ${task.title}`} aria-haspopup="menu" popoverTarget={id} disabled={busy} onClick={event => {
       const rect = event.currentTarget.getBoundingClientRect();
@@ -72,9 +71,9 @@ export default function TaskActions({ task, projects, areas, knownTags, people, 
       <p className="actiontitle" hidden={mobile && !!activeGroup}>{task.title}</p>
       <button type="button" role="menuitem" hidden={mobile && !!activeGroup} onClick={() => { panel.current?.hidePopover(); onOpen(); }}>Edit details</button>
       <div className="actiongroups" role="none" hidden={mobile && !!activeGroup}>
-        {([...propertyGroups, 'Tags'] as const).map(group => <button key={group} type="button" role="menuitem" className={activeGroup === group ? 'active' : ''}
+        {([...propertyGroups, 'Tags'] as const).map(group => group === 'Status' ? <StateField key={group} menu task={task} people={people} disabled={busy} onChange={choose}/> : <button key={group} type="button" role="menuitem" className={activeGroup === group ? 'active' : ''}
           aria-haspopup="menu" aria-expanded={activeGroup === group} aria-controls={activeGroup === group ? `${id}-choices` : undefined}
-          disabled={busy || (group === 'Area' && !!task.project_id) || (group === 'Status' && task.status === 'recurring')}
+          disabled={busy || (group === 'Area' && !!task.project_id)}
           title={group === 'Area' && task.project_id ? 'Area is inherited from the project' : undefined}
           onPointerEnter={event => { if (!mobile && event.pointerType === 'mouse') openGroup(group, event.currentTarget); }}
           onClick={event => openGroup(group, event.currentTarget, true)}
@@ -91,17 +90,11 @@ export default function TaskActions({ task, projects, areas, knownTags, people, 
           <span>{choice.label}</span><span aria-hidden="true">{choice.checked ? '✓' : ''}</span>
         </button>)}
         {activeGroup === 'Tags' && !choices.length && <p className="menunote">No tags yet</p>}
-        {(activeGroup === 'Due' || activeGroup === 'Starts') && <>
+        {(activeGroup === 'Due') && <>
           <button type="button" role="menuitem" disabled={busy} onClick={event => { const rect = event.currentTarget.getBoundingClientRect(); setDatePicker({ field: activeGroup === 'Due' ? 'due_date' : 'defer_until', label: activeGroup, anchor: { right: rect.right, bottom: rect.bottom } }); panel.current?.hidePopover(); }}>Choose date…</button>
           <button type="button" role="menuitem" disabled={busy} onClick={() => void choose({ [field]: null })}>None</button>
         </>}
-        {activeGroup === 'Waiting for' && <>
-          <input aria-label={activeGroup} type="text" value={text} disabled={busy}
-            onInput={event => setText(event.currentTarget.value)}
-            onBlur={event => { if (event.relatedTarget instanceof HTMLButtonElement && submenu.current?.contains(event.relatedTarget)) return; if (event.currentTarget.validity.valid && event.currentTarget.value !== (task[field]?.slice(0, field === 'waiting_for' ? undefined : 10) ?? '')) void choose({ [field]: event.currentTarget.value.trim() || null }); }}
-            onKeyDown={event => { if (event.key === 'Enter' && event.currentTarget.validity.valid) { event.preventDefault(); void choose({ [field]: event.currentTarget.value.trim() || null }); } }}/>
-          <button type="button" role="menuitem" disabled={busy} onPointerDown={event => event.preventDefault()} onClick={() => void choose({ [field]: null })}>None</button>
-        </>}
+
       </div>}
     </div>
     {datePicker && <DateField label={datePicker.label} value={task[datePicker.field]} disabled={busy} initialAnchor={datePicker.anchor} onClose={() => setDatePicker(null)} onChange={value => choose({ [datePicker.field]: value })}/>}

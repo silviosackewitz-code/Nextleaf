@@ -203,3 +203,34 @@ The owner subsequently selected Personal for both source tasks with multiple
 Areas. Keep each untouched source object in the private prepared record under
 `original_source`, while mapping the task to the explicitly selected Area. The
 successful live import and Pi synchronization are recorded in NEXT_STEPS.
+
+## 2026-10-18: Contacts terminology and explicit imported contact classification
+
+Use Contacts/Contact in user-facing category labels, creation/editing controls,
+filters, and errors. Contacts may be people or organizations. Keep Waiting for as
+the task field label and preserve `kind=person` in storage, REST, MCP, and sync so
+existing clients and assignments remain compatible. No schema migration is needed.
+
+Nirvana's connector classified the named contacts only as generic contexts. They
+were imported as ordinary tags without inventing a contact type. After the owner
+identified two existing entries as contacts, update their kind through local MCP,
+preserving names, IDs, and associations. Do not reimport the dataset or infer the
+kind of other tags. Personal contact names stay out of public documentation.
+
+## 2026-10-18 — Scheduled workflow, recurrence, and travel time zones
+
+The owner clarified that Deferred should follow Nirvana's State → Scheduled menu,
+then explicitly requested Start Date and Make Repeating together. Direct inspection
+confirmed those two entries and a separate repeat dialog. Remove More options and
+place Waiting contacts in the matching State submenu. Reuse the same control for
+draft editing and quick actions. Start dates must actually return tasks to Next
+with Focus; merely hiding a Next task until a date was insufficient.
+
+The owner wants the current travel timezone, not a fixed Berlin or Hermosillo zone.
+Use the last active client's system zone, synchronized to the Pi. The Pi executes
+connected schedules so background Macs cannot generate duplicates or apply a
+stale timezone independently. Standalone databases execute locally. Use chrono-tz
+for IANA/DST rules, rather than implementing timezone calculations ourselves.
+Protocol 3 deliberately rejects old peers before writes; update the server first,
+then the desktop, preserving data and local import receipts. The owner also asked
+to test this normal update path, without uninstalling the working installation.

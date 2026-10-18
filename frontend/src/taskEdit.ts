@@ -1,6 +1,6 @@
 import type { Task } from './api';
 
-export const editableFields = ['title', 'notes', 'status', 'project_id', 'area_id', 'tags', 'starred', 'waiting_for', 'due_date', 'defer_until', 'estimated_minutes', 'energy'] as const;
+export const editableFields = ['title', 'notes', 'status', 'project_id', 'area_id', 'tags', 'starred', 'waiting_for', 'due_date', 'defer_until', 'recurrence', 'estimated_minutes', 'energy'] as const;
 export type TaskChanges = Partial<Pick<Task, typeof editableFields[number]>>;
 
 export function taskChanges(original: Task, draft: Task): TaskChanges {

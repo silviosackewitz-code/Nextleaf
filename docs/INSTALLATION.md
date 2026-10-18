@@ -1,17 +1,17 @@
 # Install Nextleaf: Raspberry Pi, Mac, and iPhone
 
-Version: **0.1.0 installation-test prerelease, installation files revision 3**. Install the server first, then the
+Version: **0.1.1 installation-test prerelease**. Install the server first, then the
 native Mac app, then the iPhone web interface. This walkthrough starts with empty
 data. It does not import the old test database or Nirvana data.
 
-[Release and downloads](https://github.com/silviosackewitz-code/Nextleaf/releases/tag/install-v0.1.0-r3)
+[Release and downloads](https://github.com/silviosackewitz-code/Nextleaf/releases/tag/v0.1.1)
 
 | Component | Package |
 | --- | --- |
-| Linux server | `ghcr.io/silviosackewitz-code/nextleaf:0.1.0`, ARM64 and AMD64 |
-| Mac | `Nextleaf-0.1.0-macOS-Apple-Silicon-r3.dmg`, Apple Silicon only |
+| Linux server | `ghcr.io/silviosackewitz-code/nextleaf:0.1.1`, ARM64 and AMD64 |
+| Mac | `Nextleaf-0.1.1-macOS-Apple-Silicon.dmg`, Apple Silicon only |
 | iPhone | Online web interface served by your Linux server |
-| Source | `Nextleaf-0.1.0-install3-source.tar.gz`, GPL-3.0-only |
+| Source | `Nextleaf-0.1.1-source.tar.gz`, GPL-3.0-only |
 
 The Mac DMG is a test build without Apple Developer ID signing or notarization.
 Expect a macOS approval step. Intel Mac, Windows, and Linux desktop installers
@@ -30,7 +30,8 @@ Configuration and persistent data have separate, predictable locations:
 | Docker-managed storage | Downloaded images and disposable container layers | Not needed to restore Nextleaf |
 
 The container mounts `/srv/nextleaf` as `/data`. Its internal database path remains
-`/data/taskmanager.db`. The server is still release 0.1.0; only the host paths change.
+`/data/taskmanager.db`. Version 0.1.1 keeps the existing layout and upgrades sync to protocol 3.
+Update the server before the Mac app.
 [Storage standard and backup scope](STORAGE.md) explains reuse for other applications.
 
 ## 1. Prerequisites
@@ -60,9 +61,9 @@ The optional MCP token protects only MCP, not the web, REST, or sync endpoints.
 Use a new download directory. All files below belong to the same release:
 
 ```bash
-mkdir nextleaf-install-0.1.0-r3
-cd nextleaf-install-0.1.0-r3
-NEXTLEAF_RELEASE_BASE=https://github.com/silviosackewitz-code/Nextleaf/releases/download/install-v0.1.0-r3
+mkdir nextleaf-install-0.1.1
+cd nextleaf-install-0.1.1
+NEXTLEAF_RELEASE_BASE=https://github.com/silviosackewitz-code/Nextleaf/releases/download/v0.1.1
 wget --https-only -O docker-compose.yml "$NEXTLEAF_RELEASE_BASE/docker-compose.yml"
 wget --https-only -O example.env "$NEXTLEAF_RELEASE_BASE/example.env"
 wget --https-only -O SHA256SUMS "$NEXTLEAF_RELEASE_BASE/SHA256SUMS"
@@ -82,16 +83,16 @@ sudo install -m 0640 docker-compose.yml /opt/nextleaf-app/docker-compose.yml
 sudo install -m 0600 example.env /opt/nextleaf-app/.env
 ```
 
-The template selects image `0.1.0` and `NEXTLEAF_DATA_DIR=/srv/nextleaf` directly.
+The template selects image `0.1.1` and `NEXTLEAF_DATA_DIR=/srv/nextleaf` directly.
 No path correction or manual environment edit is needed for this first installation.
 `NEXTLEAF_MCP_TOKEN` is empty, so MCP starts disabled. Later integration is covered
 in [MCP.md](MCP.md). Use the exact private hostname in `NEXTLEAF_MCP_HOSTS` if enabling MCP.
 
-Revision 3 corrects the incomplete Mac app-bundle signature in earlier downloads.
-It uses a complete ad-hoc test signature; Apple Developer ID and notarization are
-still unavailable. The Linux image and configuration remain unchanged from
-installation revision 2. Use revision 3 downloads and their matching checksums.
-If you already installed with `/srv/nextleaf`, keep your existing `.env` and data.
+Version 0.1.1 adds Start Date, Make Repeating, travel-aware scheduling, Contacts,
+and the one-time Nirvana MCP import tool. It retains the complete ad-hoc bundle signing introduced in
+revision 3. Apple Developer ID and notarization remain unavailable.
+Existing installations keep their `.env`, data, and server address; use
+[normal updates](DEPLOYMENT.md#update-from-010-to-011) instead of resetting.
 
 Create the persistent data directory. Adjust the path if you changed it in `.env`:
 
@@ -115,7 +116,7 @@ curl --fail http://127.0.0.1:8787/api/health
 
 `pull` downloads the correct architecture; nothing is compiled on the Pi.
 Expect a healthy service and JSON containing `status: ok`, `tag-management`,
-and `sync-v2`. If it fails, inspect logs before connecting clients:
+and `sync-v3` and `scheduling`. If it fails, inspect logs before connecting clients:
 
 ```bash
 sudo docker compose --env-file /opt/nextleaf-app/.env -f /opt/nextleaf-app/docker-compose.yml logs --tail 100
@@ -147,12 +148,12 @@ Apple menu → About This Mac, check whether it says **Chip: Apple M…** or
 **Processor: Intel…**. The `.dmg` file is the macOS installer.
 
 On the repository's Code page, open **Releases** in the sidebar, choose
-**Nextleaf 0.1.0 — Installation revision 3**, and expand **Assets**. Select
+**Nextleaf 0.1.1 — Scheduling and Contacts**, and expand **Assets**. Select
 **Nextleaf for macOS — Apple Silicon (M-series) — DMG installer**.
-The downloaded file is named `Nextleaf-0.1.0-macOS-Apple-Silicon-r3.dmg`. Source-code archives
+The downloaded file is named `Nextleaf-0.1.1-macOS-Apple-Silicon.dmg`. Source-code archives
 are for developers and are not the installer.
 
-1. Download `Nextleaf-0.1.0-macOS-Apple-Silicon-r3.dmg` and `SHA256SUMS` from the release.
+1. Download `Nextleaf-0.1.1-macOS-Apple-Silicon.dmg` and `SHA256SUMS` from the release.
    In Terminal, run `shasum -a 256` on the downloaded DMG and compare its full
    hash with that file's entry in `SHA256SUMS`.
 2. Open the DMG, drag `Nextleaf.app` into **Applications**, and eject the DMG.
@@ -168,7 +169,7 @@ are for developers and are not the installer.
    Quit and reopen the installed Mac app to confirm local persistence.
 
 If an earlier `Nextleaf_0.1.0_aarch64.dmg` reports that the app is damaged, cancel
-that launch and use the revision 3 installer instead. The original files had an
+that launch and use the current installer instead. The original files had an
 incomplete bundle signature despite matching their download checksums. Do not
 remove quarantine attributes or disable Gatekeeper to hide this packaging defect.
 
@@ -199,10 +200,10 @@ Repeat in Safari and from the Home Screen:
 
 - Portrait, landscape, scrolling, and the on-screen keyboard: fields and Save/Done/
   Cancel remain reachable, with no horizontally clipped sheets.
-- **Settings → Manage Tags**: create an Area, Person, and Tag, rename them, archive
+- **Settings → Manage Tags**: create an Area, Contact, and Tag, rename them, archive
   them, and restore them using **Show archived → Restore**. Include a long name.
 - Open a task, select a tag suggestion, remove a tag/area, save, and reopen.
-- Use **More options → Waiting for**, both with a suggested contact and free text;
+- Use **State → Waiting**, both with a suggested contact and free text;
   also check the task's **⋯ → Waiting for** action.
 - Archive an assigned tag/area: the assignment remains visible, but it is not
   offered for new assignments.

@@ -46,9 +46,54 @@ curl --fail http://127.0.0.1:8787/api/health
 5. Verify private HTTPS, expected capabilities, and existing data. Update compatible
    Mac clients after the server, then check bidirectional sync and conflicts.
 
-Protocol 2 carries tag identity and archive/kind state. Old sync clients are
+Protocol 3 carries tag identity, repeat rules, and the active timezone. Old sync clients are
 rejected rather than silently losing that data. Do not downgrade a migrated
 SQLite database in place. Reverting the image alone is not a database rollback.
+
+## Update from 0.1.0 to 0.1.1
+
+This release migrates sync protocol 2 to 3. Update the server first, then replace
+the Mac app, then reload the iPhone page. During this short mixed-version period,
+sync is rejected rather than discarding repeat rules. Do not uninstall or delete
+application data. Open the updated app once to report the current system timezone.
+
+
+This update changes People/Person labels to Contacts/Contact and includes the
+transactional Nirvana MCP import tool. Existing data, the server address, storage
+paths, and contact IDs are preserved. No reimport is required. Contacts retain
+the internal `person` kind; the new repeat fields require sync protocol 3.
+
+1. Quit Nextleaf on the Mac and close the iPhone web app. Make the consistent
+   server/config backup described below and retain the local desktop database,
+   including its import receipts.
+2. On the server, open the existing configuration:
+
+```bash
+sudo nano /opt/nextleaf-app/.env
+```
+
+Change only the image line to:
+
+```dotenv
+TASKMANAGER_IMAGE=ghcr.io/silviosackewitz-code/nextleaf:0.1.1
+```
+
+Then run:
+
+```bash
+sudo docker compose --env-file /opt/nextleaf-app/.env -f /opt/nextleaf-app/docker-compose.yml config --quiet &&
+sudo docker compose --env-file /opt/nextleaf-app/.env -f /opt/nextleaf-app/docker-compose.yml pull &&
+sudo docker compose --env-file /opt/nextleaf-app/.env -f /opt/nextleaf-app/docker-compose.yml up -d --wait
+curl --fail --show-error http://127.0.0.1:8787/api/health
+```
+
+3. Download `Nextleaf-0.1.1-macOS-Apple-Silicon.dmg` and verify its checksum from
+   the [0.1.1 release](https://github.com/silviosackewitz-code/Nextleaf/releases/tag/v0.1.1).
+   With Nextleaf quit, drag the new app into Applications and choose Replace.
+   Keep `~/Library/Application Support/dev.taskmanager.desktop` intact. Open the
+   installed app; the existing server connection and tasks should remain.
+4. Reload the iPhone web page or reopen its Home Screen app. Check **Settings →
+   Manage Tags → Contacts**, the Waiting contact choices, and synchronization.
 
 ## Consistent backup and restore
 
@@ -117,7 +162,7 @@ that historical update; the new release guide targets an empty installation.
 Create a version tag matching package versions. `.github/workflows/containers.yml`
 builds native ARM64 and AMD64 images, runs Rust tests plus the disposable Compose
 check, and publishes a combined GHCR manifest only after both succeed.
-`deploy/check_container.py` checks empty startup, web/API, 13 MCP tools, tag/person
+`deploy/check_container.py` checks empty startup, web/API, the available MCP tools, tag/contact
 operations, and data/server-identity persistence across container recreation.
 
 Build the Mac package on a Mac:

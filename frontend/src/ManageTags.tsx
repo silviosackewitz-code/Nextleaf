@@ -7,7 +7,7 @@ type Tab = 'areas' | 'person' | 'tag';
 type Entry = Area | Tag;
 const tabs: { id: Tab; label: string; singular: string }[] = [
   { id: 'areas', label: 'Areas', singular: 'area' },
-  { id: 'person', label: 'People', singular: 'person' },
+  { id: 'person', label: 'Contacts', singular: 'contact' },
   { id: 'tag', label: 'Tags', singular: 'tag' },
 ];
 
@@ -81,7 +81,7 @@ export default function ManageTags({ onClose, onChanged }: { onClose: () => void
   }
   const editor = <form className="manageeditor" onSubmit={event => { event.preventDefault(); save(); }}>
     <input autoFocus aria-label={`${singular[0].toUpperCase()}${singular.slice(1)} name`} value={name} disabled={busy} maxLength={255} onChange={event => setName(event.target.value)} />
-    {tab !== 'areas' && <select aria-label="Tag type" value={kind} disabled={busy} onChange={event => setKind(event.target.value as 'tag' | 'person')}><option value="tag">Tag</option><option value="person">Person</option></select>}
+    {tab !== 'areas' && <select aria-label="Tag type" value={kind} disabled={busy} onChange={event => setKind(event.target.value as 'tag' | 'person')}><option value="tag">Tag</option><option value="person">Contact</option></select>}
     <div className="manageeditoractions"><button type="button" disabled={busy} onClick={() => { setEditing(null); if (error) setLoadNumber(value => value + 1); setError(''); }}>Cancel</button><button className="primary" disabled={busy || !name.trim()}>{busy ? 'Saving…' : editing === 'new' ? 'Create' : 'Save'}</button></div>
   </form>;
 

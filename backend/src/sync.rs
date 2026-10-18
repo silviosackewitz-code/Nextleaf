@@ -13,7 +13,8 @@ impl Default for Snapshot {
             projects: Records::new(),
             tasks: Records::new(),
             tags: Records::new(),
-            protocol: 2,
+            protocol: 3,
+            clock: schedule::Clock::default(),
         }
     }
 }
@@ -25,6 +26,7 @@ pub struct Snapshot {
     tasks: Records,
     tags: Records,
     protocol: u32,
+    clock: schedule::Clock,
 }
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(deny_unknown_fields)]
@@ -87,7 +89,7 @@ pub struct SyncStatus {
 const AREA: &str = "id,name,sort_order,created_at,updated_at,archived";
 const TAG: &str = "id,name,kind,archived";
 const PROJECT: &str = "id,area_id,name,notes,project_type,status,sort_order,created_at,updated_at,completed_at,due_date,starred";
-const TASK: &str = "id,project_id,area_id,title,notes,status,sort_order,due_date,defer_until,completed_at,created_at,updated_at,starred,waiting_for,estimated_minutes,energy";
+const TASK: &str = "id,project_id,area_id,title,notes,status,sort_order,due_date,defer_until,completed_at,created_at,updated_at,starred,waiting_for,estimated_minutes,energy,recurrence";
 
 async fn identity(conn: &mut SqliteConnection) -> Result<String, String> {
     sqlx::query("INSERT OR IGNORE INTO sync_identity(singleton,id) VALUES(1,?)")
@@ -104,7 +106,10 @@ fn err(e: impl std::fmt::Display) -> String {
     e.to_string()
 }
 async fn snapshot(conn: &mut SqliteConnection) -> Result<Snapshot, String> {
-    let mut result = Snapshot::default();
+    let mut result = Snapshot {
+        clock: schedule::read_clock(conn).await.map_err(err)?,
+        ..Snapshot::default()
+    };
     for (table, columns, target) in [
         ("tags", TAG, &mut result.tags),
         ("areas", AREA, &mut result.areas),
@@ -153,6 +158,9 @@ fn merge(
         remap_tag(&mut base, &old, &new);
     }
     let mut merged = remote.clone();
+    if local.clock.newer_than(&remote.clock) {
+        merged.clock = local.clock.clone();
+    }
     let mut conflicts = vec![];
     for (kind, b, l, r, out) in [
         (
@@ -316,11 +324,12 @@ fn remap_tag(snapshot: &mut Snapshot, old: &str, new: &str) {
     }
 }
 fn validate(s: &Snapshot) -> Result<(), String> {
-    if s.protocol != 2 {
+    if s.protocol != 3 {
         return Err(
-            "Update both the server and desktop app to support tag management sync.".into(),
+            "Update both the server and desktop app to support scheduling sync (version 3).".into(),
         );
     }
+    s.clock.validate()?;
     let mut names = BTreeSet::new();
     for tag in s.tags.values() {
         if !names.insert(tag.get("name").and_then(Value::as_str)) {
@@ -402,6 +411,17 @@ fn validate(s: &Snapshot) -> Result<(), String> {
                             }
                         }
                     }
+                    "recurrence" => {
+                        if !value.is_null() {
+                            let rule: schedule::RepeatRule =
+                                serde_json::from_str(value.as_str().ok_or("Invalid repeat rule")?)
+                                    .map_err(err)?;
+                            rule.validate().map_err(err)?;
+                            if fields["status"] != "recurring" {
+                                return Err("A repeat rule requires Recurring state".into());
+                            }
+                        }
+                    }
                     "completed_at" | "waiting_for" => {
                         if !value.is_null() && value.as_str().is_none() {
                             return Err("Invalid optional text".into());
@@ -440,6 +460,7 @@ fn validate(s: &Snapshot) -> Result<(), String> {
 }
 async fn apply(conn: &mut SqliteConnection, s: &Snapshot) -> Result<(), String> {
     validate(s)?;
+    schedule::write_clock(conn, &s.clock).await.map_err(err)?;
     // Upsert, never replace/delete: original import audit records and future metadata survive.
     // Avoid transient UNIQUE(name) failures during simultaneous renames. Never delete a tag.
     // Same-name concurrent creations use one canonical ID, preserving local foreign keys.
@@ -533,6 +554,9 @@ pub(super) async fn get_snapshot(
         .await
         .map_err(internal)?;
     let id = identity(&mut tx).await.map_err(sync_error)?;
+    schedule::advance(&mut tx, Utc::now())
+        .await
+        .map_err(internal)?;
     let data = snapshot(&mut tx).await.map_err(sync_error)?;
     tx.commit().await.map_err(internal)?;
     Ok(Json(Envelope {
@@ -593,6 +617,7 @@ async fn exchange_db(pool: &SqlitePool, request: Exchange) -> Result<Reply, Stri
     let tag_remaps = tag_remaps(&request.base, &request.local, &remote);
     let reply = if conflicts.is_empty() {
         apply(&mut tx, &merged).await?;
+        schedule::advance(&mut tx, Utc::now()).await.map_err(err)?;
         Reply {
             server_id,
             snapshot: snapshot(&mut tx).await?,
@@ -876,7 +901,19 @@ pub(crate) async fn migrate_client_state(pool: &SqlitePool) -> Result<(), String
         return Ok(());
     };
     let mut state: Value = serde_json::from_str(&raw).map_err(err)?;
+    if state["baseline"]["protocol"] == 3 {
+        return Ok(());
+    }
     if state["baseline"]["protocol"] == 2 {
+        for key in ["baseline", "conflict_base", "conflict_server"] {
+            if !state[key].is_null() {
+                upgrade_schedule_snapshot(&mut state[key])?;
+            }
+        }
+        state["inflight"] = Value::Null;
+        let state: ClientState = serde_json::from_value(state).map_err(err)?;
+        save(&mut tx, &state).await?;
+        tx.commit().await.map_err(err)?;
         return Ok(());
     }
     if !state["baseline"]["protocol"].is_null() {
@@ -975,7 +1012,19 @@ fn upgrade_snapshot(value: &mut Value, canonical: &BTreeMap<String, String>) -> 
         fields["archived"] = json!(0);
     }
     value["tags"] = Value::Object(tags);
-    value["protocol"] = json!(2);
+    upgrade_schedule_snapshot(value)?;
+    validate(&serde_json::from_value(value.clone()).map_err(err)?)
+}
+fn upgrade_schedule_snapshot(value: &mut Value) -> Result<(), String> {
+    for task in value["tasks"]
+        .as_object_mut()
+        .ok_or("Invalid saved tasks")?
+        .values_mut()
+    {
+        task["recurrence"] = Value::Null;
+    }
+    value["clock"] = serde_json::to_value(schedule::Clock::default()).map_err(err)?;
+    value["protocol"] = json!(3);
     validate(&serde_json::from_value(value.clone()).map_err(err)?)
 }
 async fn load(conn: &mut SqliteConnection) -> Result<ClientState, String> {
@@ -997,6 +1046,7 @@ fn equivalent(left: &Snapshot, right: &Snapshot) -> bool {
         && left.projects == right.projects
         && left.tasks == right.tasks
         && left.tags == right.tags
+        && left.clock == right.clock
 }
 
 #[cfg(test)]
@@ -1726,6 +1776,10 @@ mod tests {
         .execute(&p)
         .await
         .unwrap();
+        sqlx::raw_sql(include_str!("../migrations/20261018020000_scheduling.sql"))
+            .execute(&p)
+            .await
+            .unwrap();
         let d = data(&p).await;
         assert_eq!(d.tasks["x"]["waiting_for"], "Alice");
         assert_eq!(d.tasks["x"]["tags"], json!(["t"]));
@@ -1759,5 +1813,90 @@ mod tests {
             .unwrap();
         assert_eq!(saved, raw.to_string());
         assert!(data(&p).await.tags.contains_key(&tag.id));
+    }
+    #[tokio::test]
+    async fn v2_upgrade_keeps_pending_edits_and_rejects_old_peers() {
+        let p = pool().await;
+        let id = task(&p, "Preserved before upgrade").await;
+        let baseline = data(&p).await;
+        let state = ClientState {
+            baseline: baseline.clone(),
+            sequence: 7,
+            remote_url: Some("https://server.invalid".into()),
+            ..ClientState::default()
+        };
+        let mut legacy = serde_json::to_value(state).unwrap();
+        legacy["baseline"]["protocol"] = json!(2);
+        legacy["baseline"].as_object_mut().unwrap().remove("clock");
+        for task in legacy["baseline"]["tasks"]
+            .as_object_mut()
+            .unwrap()
+            .values_mut()
+        {
+            task.as_object_mut().unwrap().remove("recurrence");
+        }
+        legacy["inflight"] = json!({"previous":"request retained in server receipts"});
+        sqlx::query("INSERT INTO sync_client VALUES(1,?)")
+            .bind(legacy.to_string())
+            .execute(&p)
+            .await
+            .unwrap();
+        sqlx::query("UPDATE tasks SET notes='Pending local edit' WHERE id=?")
+            .bind(&id)
+            .execute(&p)
+            .await
+            .unwrap();
+        migrate_client_state(&p).await.unwrap();
+        migrate_client_state(&p).await.unwrap();
+        let state = load(&mut *p.acquire().await.unwrap()).await.unwrap();
+        assert_eq!(state.baseline.protocol, 3);
+        assert_eq!(state.sequence, 7);
+        assert!(state.inflight.is_none());
+        assert_eq!(state.baseline.tasks[&id]["notes"], "");
+        assert_eq!(data(&p).await.tasks[&id]["notes"], "Pending local edit");
+        let mut old = baseline;
+        old.protocol = 2;
+        assert!(validate(&old).is_err());
+    }
+    #[tokio::test]
+    async fn repeat_and_travel_sync_generate_once_on_server_and_merge_unrelated_edits() {
+        let server = pool().await;
+        let client = SyncEngine::new(pool().await);
+        let id = task(&server, "Repeat source").await;
+        roundtrip(&client, &server).await;
+        let mut tx = client.pool.begin_with("BEGIN IMMEDIATE").await.unwrap();
+        let mut state = load(&mut tx).await.unwrap();
+        state.remote_url = Some("https://server.invalid".into());
+        save(&mut tx, &state).await.unwrap();
+        schedule::write_clock(
+            &mut tx,
+            &schedule::Clock {
+                timezone: "America/Hermosillo".into(),
+                updated_at: stamp(),
+            },
+        )
+        .await
+        .unwrap();
+        tx.commit().await.unwrap();
+        let today = Utc::now()
+            .with_timezone(&chrono_tz::America::Hermosillo)
+            .date_naive()
+            .to_string();
+        edit(&client.pool,&id,json!({"recurrence":{"id":uid(),"frequency":"daily","interval":1,"start":today,"until":today,"due_days":null,"paused":false}})).await;
+        assert_eq!(data(&client.pool).await.tasks.len(), 1);
+        edit(&server, &id, json!({"notes":"Independent server edit"})).await;
+        roundtrip(&client, &server).await;
+        assert!(client.status().await.unwrap().conflicts.is_empty());
+        assert_eq!(data(&server).await.clock.timezone, "America/Hermosillo");
+        let first = data(&server).await;
+        assert_eq!(first.tasks.len(), 2);
+        assert!(first
+            .tasks
+            .values()
+            .all(|t| t["notes"] == "Independent server edit"));
+        roundtrip(&client, &server).await;
+        schedule::tick(&server).await.unwrap();
+        assert_eq!(data(&server).await, first);
+        assert_eq!(data(&client.pool).await, first);
     }
 }

@@ -1,5 +1,6 @@
 mod mcp;
 pub mod nirvana;
+pub mod schedule;
 
 use axum::{
     extract::{Path, Query, State},
@@ -516,6 +517,7 @@ async fn check_expected(
             "area_id",
             "due_date",
             "defer_until",
+            "recurrence",
             "waiting_for",
             "estimated_minutes",
             "energy",
@@ -556,6 +558,10 @@ async fn check_expected(
     .map_err(internal)?;
     let mut current: Value =
         serde_json::from_str(&row.ok_or_else(not_found)?).expect("SQLite JSON result");
+    if let Some(raw) = current["recurrence"].as_str() {
+        current["recurrence"] =
+            serde_json::from_str(raw).map_err(|_| bad_request("Invalid stored repeat rule"))?;
+    }
     if expected.contains_key("archived") {
         current["archived"] = json!(current["archived"].as_i64() == Some(1));
     }
@@ -644,6 +650,7 @@ struct TaskRow {
     sort_order: i64,
     due_date: Option<String>,
     defer_until: Option<String>,
+    recurrence: Option<sqlx::types::Json<schedule::RepeatRule>>,
     completed_at: Option<String>,
     created_at: String,
     updated_at: String,
@@ -666,6 +673,7 @@ struct Task {
     sort_order: i64,
     due_date: Option<String>,
     defer_until: Option<String>,
+    recurrence: Option<sqlx::types::Json<schedule::RepeatRule>>,
     completed_at: Option<String>,
     created_at: String,
     updated_at: String,
@@ -693,6 +701,7 @@ struct NewTask {
     area_id: Option<String>,
     status: Option<String>,
     notes: Option<String>,
+    defer_until: Option<String>,
 }
 #[derive(Debug, Deserialize, rmcp::schemars::JsonSchema)]
 #[serde(deny_unknown_fields)]
@@ -717,6 +726,8 @@ struct UpdateTask {
     #[serde(default, deserialize_with = "nullable")]
     defer_until: Option<Option<String>>,
     #[serde(default, deserialize_with = "nullable")]
+    recurrence: Option<Option<schedule::RepeatRule>>,
+    #[serde(default, deserialize_with = "nullable")]
     waiting_for: Option<Option<String>>,
 }
 // A missing field leaves its value unchanged; explicit null clears it.
@@ -734,7 +745,11 @@ fn valid_task_status(status: &str) -> bool {
 
 // Centralized rule: the first unfinished task of each sequential project is its only
 // candidate for Next. If that first task is Waiting/Scheduled/Someday, don't skip it.
+#[cfg(test)]
 fn decorate_tasks(rows: Vec<TaskRow>) -> Vec<Task> {
+    decorate_tasks_on(rows, Utc::now().date_naive())
+}
+fn decorate_tasks_on(rows: Vec<TaskRow>, today: chrono::NaiveDate) -> Vec<Task> {
     let mut first_open: HashMap<String, String> = HashMap::new();
     for task in &rows {
         if let (Some(project_id), Some(kind)) = (&task.project_id, &task.project_type) {
@@ -748,7 +763,7 @@ fn decorate_tasks(rows: Vec<TaskRow>) -> Vec<Task> {
             }
         }
     }
-    let today = Utc::now().date_naive().to_string();
+    let today = today.to_string();
     rows.into_iter()
         .map(|task| {
             let in_sequence = task.project_type.as_deref() == Some("sequential");
@@ -761,7 +776,7 @@ fn decorate_tasks(rows: Vec<TaskRow>) -> Vec<Task> {
             let deferred = task
                 .defer_until
                 .as_deref()
-                .is_some_and(|date| date > today.as_str());
+                .is_some_and(|date| date.get(..10).is_some_and(|date| date > today.as_str()));
             let project_active = task.project_status.as_deref().is_none_or(|s| s == "active");
             let available = task.status == "next" && project_active && !deferred && !blocked;
             Task {
@@ -774,6 +789,7 @@ fn decorate_tasks(rows: Vec<TaskRow>) -> Vec<Task> {
                 sort_order: task.sort_order,
                 due_date: task.due_date,
                 defer_until: task.defer_until,
+                recurrence: task.recurrence,
                 completed_at: task.completed_at,
                 created_at: task.created_at,
                 updated_at: task.updated_at,
@@ -789,8 +805,12 @@ fn decorate_tasks(rows: Vec<TaskRow>) -> Vec<Task> {
         .collect()
 }
 async fn fetch_tasks(pool: &SqlitePool) -> Result<Vec<Task>, (StatusCode, Json<Value>)> {
+    schedule::tick(pool).await.map_err(internal)?;
+    let clock = schedule::read_clock(&mut *pool.acquire().await.map_err(internal)?)
+        .await
+        .map_err(internal)?;
     let rows = sqlx::query_as::<_,TaskRow>(
-        "SELECT t.id,t.project_id,t.area_id,t.title,t.notes,t.status,t.sort_order,t.due_date,t.defer_until,t.completed_at,t.created_at,t.updated_at,t.starred,t.waiting_for,t.estimated_minutes,t.energy, p.project_type,p.status AS project_status,p.area_id AS project_area_id FROM tasks t LEFT JOIN projects p ON t.project_id=p.id ORDER BY t.sort_order,t.created_at,t.id"
+        "SELECT t.id,t.project_id,t.area_id,t.title,t.notes,t.status,t.sort_order,t.due_date,t.defer_until,t.recurrence,t.completed_at,t.created_at,t.updated_at,t.starred,t.waiting_for,t.estimated_minutes,t.energy, p.project_type,p.status AS project_status,p.area_id AS project_area_id FROM tasks t LEFT JOIN projects p ON t.project_id=p.id ORDER BY t.sort_order,t.created_at,t.id"
     ).fetch_all(pool).await.map_err(internal)?;
     let links: Vec<(String, String)> = sqlx::query_as(
         "SELECT tt.task_id,t.name FROM task_tags tt JOIN tags t ON t.id=tt.tag_id ORDER BY t.name",
@@ -802,7 +822,7 @@ async fn fetch_tasks(pool: &SqlitePool) -> Result<Vec<Task>, (StatusCode, Json<V
     for (id, name) in links {
         tags.entry(id).or_default().push(name);
     }
-    let mut tasks = decorate_tasks(rows);
+    let mut tasks = decorate_tasks_on(rows, clock.today(Utc::now()));
     for task in &mut tasks {
         task.tags = tags.remove(&task.id).unwrap_or_default();
     }
@@ -866,6 +886,9 @@ async fn list_tasks(
 }
 async fn create_task(State(state): State<AppState>, Json(input): Json<NewTask>) -> ApiResult<Task> {
     let title = required_name(&input.title)?;
+    if let Some(date) = &input.defer_until {
+        schedule::date(date).map_err(bad_request)?;
+    }
     let status = input.status.unwrap_or_else(|| "inbox".into());
     if !valid_task_status(&status) {
         return Err(bad_request("Invalid task status"));
@@ -895,9 +918,9 @@ async fn create_task(State(state): State<AppState>, Json(input): Json<NewTask>) 
     } else {
         None
     };
-    sqlx::query("INSERT INTO tasks (id,project_id,area_id,title,notes,status,sort_order,completed_at,created_at,updated_at,starred) VALUES (?,?,?,?,?,?,?,?,?,?,?)")
+    sqlx::query("INSERT INTO tasks (id,project_id,area_id,title,notes,status,sort_order,completed_at,created_at,updated_at,starred,defer_until) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)")
         .bind(&id).bind(&input.project_id).bind(&input.area_id).bind(&title).bind(input.notes.unwrap_or_default())
-        .bind(&status).bind(order).bind(completed_at).bind(&now).bind(&now).bind(input.starred.unwrap_or(false))
+        .bind(&status).bind(order).bind(completed_at).bind(&now).bind(&now).bind(input.starred.unwrap_or(false)).bind(input.defer_until)
         .execute(&mut *tx).await.map_err(internal)?;
     tx.commit().await.map_err(internal)?;
     fetch_tasks(&state.pool)
@@ -910,7 +933,7 @@ async fn create_task(State(state): State<AppState>, Json(input): Json<NewTask>) 
 async fn update_task(
     State(state): State<AppState>,
     Path(id): Path<String>,
-    Json(input): Json<UpdateTask>,
+    Json(mut input): Json<UpdateTask>,
 ) -> ApiResult<Task> {
     if input.title.is_none()
         && input.status.is_none()
@@ -923,12 +946,24 @@ async fn update_task(
         && input.area_id.is_none()
         && input.due_date.is_none()
         && input.defer_until.is_none()
+        && input.recurrence.is_none()
         && input.waiting_for.is_none()
     {
         return Err(bad_request("No changes"));
     }
     let title = input.title.as_deref().map(required_name).transpose()?;
-    if input.status.as_ref().is_some_and(|s| !valid_task_status(s)) {
+    if let Some(Some(rule)) = &input.recurrence {
+        rule.validate().map_err(bad_request)?;
+        if input.status.as_deref().is_some_and(|s| s != "recurring") {
+            return Err(bad_request("A repeat rule requires Recurring state"));
+        }
+        input.status = Some("recurring".into());
+        input.defer_until = Some(None);
+    }
+    if input.status.as_ref().is_some_and(|s| {
+        !valid_task_status(s)
+            && !(s == "recurring" && input.recurrence.as_ref().is_some_and(|r| r.is_some()))
+    }) {
         return Err(bad_request("Invalid task status"));
     }
     if input
@@ -974,6 +1009,19 @@ async fn update_task(
         .await
         .map_err(internal)?;
     check_expected(&mut tx, "tasks", &id, input.expected.as_ref()).await?;
+    if input.status.as_deref().is_some_and(|s| s != "recurring") {
+        input.recurrence = Some(None);
+    }
+    if input.recurrence == Some(None) && input.status.is_none() {
+        let status: Option<String> = sqlx::query_scalar("SELECT status FROM tasks WHERE id=?")
+            .bind(&id)
+            .fetch_optional(&mut *tx)
+            .await
+            .map_err(internal)?;
+        if status.as_deref() == Some("recurring") {
+            input.status = Some("next".into());
+        }
+    }
     if let Some(Some(area)) = &input.area_id {
         ensure_area(&mut tx, area, Some(("tasks", &id))).await?;
     }
@@ -988,6 +1036,7 @@ async fn update_task(
         area_id=CASE WHEN ? THEN ? WHEN ? THEN NULL ELSE area_id END,
         due_date=CASE WHEN ? THEN ? ELSE due_date END,
         defer_until=CASE WHEN ? THEN ? ELSE defer_until END,
+        recurrence=CASE WHEN ? THEN ? ELSE recurrence END,
         waiting_for=CASE WHEN ? THEN ? ELSE waiting_for END,
         updated_at=? WHERE id=?"#)
         .bind(title).bind(input.notes).bind(&input.status).bind(&input.status).bind(stamp())
@@ -999,6 +1048,7 @@ async fn update_task(
         .bind(input.area_id.is_some()).bind(input.area_id.flatten()).bind(input.project_id.as_ref().is_some_and(|v| v.is_some()))
         .bind(input.due_date.is_some()).bind(input.due_date.flatten())
         .bind(input.defer_until.is_some()).bind(input.defer_until.flatten())
+        .bind(input.recurrence.is_some()).bind(input.recurrence.flatten().map(sqlx::types::Json))
         .bind(input.waiting_for.is_some()).bind(input.waiting_for.flatten())
         .bind(stamp()).bind(&id).execute(&mut *tx).await.map_err(internal)?;
     if result.rows_affected() == 0 {
@@ -1050,9 +1100,10 @@ fn configured_api_router(pool: SqlitePool, mcp_enabled: bool) -> Router {
         .route(
             "/health",
             get(move || async move {
-                Json(json!({"status":"ok","capabilities":["task-editing","item-creation","project-editing","mcp","sync","conditional-updates","tag-management","sync-v2"],"mcp":{"enabled":mcp_enabled,"path":"/mcp"}}))
+                Json(json!({"status":"ok","capabilities":["task-editing","item-creation","project-editing","mcp","sync","conditional-updates","tag-management","sync-v3","scheduling"],"mcp":{"enabled":mcp_enabled,"path":"/mcp"}}))
             }),
         )
+        .route("/schedule/timezone", axum::routing::post(schedule::report_timezone))
         .route("/areas", get(list_areas).post(create_area))
         .route("/areas/{id}", patch(update_area))
         .route("/projects", get(list_projects).post(create_project))
@@ -1096,6 +1147,7 @@ pub async fn run() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         .await?;
     sqlx::migrate!("./migrations").run(&pool).await?;
     sync::migrate_client_state(&pool).await?;
+    tokio::spawn(schedule::run(pool.clone()));
     let mcp_router = mcp::router(AppState { pool: pool.clone() })?;
     let mcp_enabled = env::var("NEXTLEAF_MCP_TOKEN").is_ok_and(|token| !token.is_empty());
     let web_dir = PathBuf::from(
@@ -1139,6 +1191,7 @@ mod tests {
             sort_order: order,
             due_date: None,
             defer_until: None,
+            recurrence: None,
             completed_at: None,
             created_at: "2026-10-17T10:00:00Z".into(),
             updated_at: "2026-10-17T10:00:00Z".into(),

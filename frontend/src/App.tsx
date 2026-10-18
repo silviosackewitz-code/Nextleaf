@@ -1,5 +1,6 @@
 import { FormEvent, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { api, Area, getApiBase, getStoredApiUrl, isDesktop, Project, Tag, Task, View } from './api';
+import DateField from './DateField';
 import ManageTags from './ManageTags';
 import ProjectDetails from './ProjectDetails';
 import DesktopConnection, { DesktopSyncIndicator } from './DesktopConnection';
@@ -42,6 +43,7 @@ export default function App() {
   const [navigationTasks, setNavigationTasks] = useState<{ inbox: Task[]; focus: Task[]; waiting: Task[] }>({ inbox: [], focus: [], waiting: [] });
   const [newItemView, setNewItemView] = useState<View | null>(null);
   const [newItemTitle, setNewItemTitle] = useState('');
+  const [newItemDate, setNewItemDate] = useState<string | null>(null);
   const [showNewTag, setShowNewTag] = useState(false);
   const [newTag, setNewTag] = useState('');
   const [tagRecords, setTagRecords] = useState<Tag[]>([]);
@@ -116,11 +118,21 @@ export default function App() {
     } catch (e) { if (requestNumber === loadNumber.current) setError(e instanceof Error ? e.message : String(e)); }
   }, [view, areaId, projectId]);
   useEffect(() => {
-    void reload();
+    void api.reportTimezone().then(reload).catch(() => reload());
+    let zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const onVisible = () => { if (document.visibilityState === 'visible') void api.reportTimezone().then(() => { if (!dirtyEditor.current) void reload(); }).catch(() => {}); };
+    const timer = window.setInterval(() => {
+      if (document.visibilityState !== 'visible') return;
+      const current = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      if (zone !== current) { zone = current; onVisible(); }
+      else if (!dirtyEditor.current) void reload();
+    }, 30000);
+    document.addEventListener('visibilitychange', onVisible);
+    window.addEventListener('focus', onVisible);
     const onFocus = () => { if (!dirtyEditor.current) void reload(); };
     window.addEventListener('focus', onFocus);
     window.addEventListener('nextleaf-data-changed', onFocus);
-    return () => { ++loadNumber.current; window.removeEventListener('focus', onFocus); window.removeEventListener('nextleaf-data-changed', onFocus); };
+    return () => { window.clearInterval(timer); document.removeEventListener('visibilitychange', onVisible); window.removeEventListener('focus', onVisible); ++loadNumber.current; window.removeEventListener('focus', onFocus); window.removeEventListener('nextleaf-data-changed', onFocus); };
   }, [reload]);
   const filteredProjects = useMemo(() => projects.filter(p => !areaId || p.area_id === areaId), [projects, areaId]);
   const badges = navigationCounts(navigationTasks, tagFilter);
@@ -226,10 +238,11 @@ export default function App() {
   function openNewProject() { setNewProject(''); setProjectType('parallel'); setError(''); setShowNewProject(true); }
   function createNewItem(event: FormEvent) {
     event.preventDefault();
-    if (!newItemView || !newItemTitle.trim()) return;
+    if (!newItemView || !newItemTitle.trim() || (newItemView === 'scheduled' && !newItemDate)) return;
     const target = captureTarget(newItemView);
     void action(async () => {
-      await api.addTask(newItemTitle.trim(), target.status, projectId || null, !projectId && activeArea && !activeArea.archived ? activeArea.id : null, target.starred);
+      await api.addTask(newItemTitle.trim(), target.status, projectId || null, !projectId && activeArea && !activeArea.archived ? activeArea.id : null, target.starred, target.status === 'scheduled' ? newItemDate : null);
+      setNewItemDate(null);
       setNewItemView(null); setNewItemTitle('');
     });
   }
@@ -273,7 +286,7 @@ export default function App() {
             <select aria-label="Filter time" value={propertyFilters.minutes ?? ''} onChange={event => void changeFilters({ properties: { ...propertyFilters, minutes: event.target.value ? Number(event.target.value) : null } })}><option value="">Time</option>{timeOptions.map(minutes => <option key={minutes} value={minutes}>Up to {minutes < 60 ? `${minutes} min` : `${minutes / 60} hr`}</option>)}</select>
             <select aria-label="Filter energy" value={propertyFilters.energy ?? ''} onChange={event => void changeFilters({ properties: { ...propertyFilters, energy: event.target.value ? Number(event.target.value) : null } })}><option value="">Energy</option><option value="1">Low energy</option><option value="2">Medium energy</option><option value="3">High energy</option></select>
           </>}
-          {view === 'waiting' && (mobile ? <select aria-label="Filter person" value={personFilter} onChange={event => void changeFilters({ person: event.target.value })}><option value="">People</option>{[...new Set([...relevantPeople, ...(personFilter ? [personFilter] : [])])].map(person => <option key={person} value={person}>{person}</option>)}</select> : [...new Set([...relevantPeople, ...(personFilter ? [personFilter] : [])])].map(person => <button key={person} aria-label={`Filter person: ${person}`} aria-pressed={personFilter === person} onClick={() => void changeFilters({ person: personFilter === person ? '' : person })}>{person}</button>))}
+          {view === 'waiting' && (mobile ? <select aria-label="Filter contact" value={personFilter} onChange={event => void changeFilters({ person: event.target.value })}><option value="">Contacts</option>{[...new Set([...relevantPeople, ...(personFilter ? [personFilter] : [])])].map(person => <option key={person} value={person}>{person}</option>)}</select> : [...new Set([...relevantPeople, ...(personFilter ? [personFilter] : [])])].map(person => <button key={person} aria-label={`Filter contact: ${person}`} aria-pressed={personFilter === person} onClick={() => void changeFilters({ person: personFilter === person ? '' : person })}>{person}</button>))}
           {relevantAreas.map(area => <button key={area.id} aria-pressed={areaId === area.id} onClick={() => selectArea(areaId === area.id ? '' : area.id)}>{area.name}</button>)}
           {mobile ? <select aria-label="Filter tag" value={tagFilter === UNTAGGED ? 'untagged' : tagFilter === null ? '' : `tag:${tagFilter}`} onChange={event => void changeFilters({ tag: event.target.value === 'untagged' ? UNTAGGED : event.target.value ? event.target.value.slice(4) : null })}><option value="">Tags</option>{[...new Set([...relevantTags, ...(typeof tagFilter === 'string' ? [tagFilter] : [])])].map(tag => <option key={tag} value={`tag:${tag}`}>{tag}</option>)}<option value="untagged">— Untagged</option></select> : <>
             {[...new Set([...relevantTags, ...(typeof tagFilter === 'string' ? [tagFilter] : [])])].map(tag => <button key={tag} aria-pressed={tagFilter === tag} onClick={() => void changeFilters({ tag: tagFilter === tag ? null : tag })}>{tag}</button>)}
@@ -369,7 +382,7 @@ export default function App() {
         <label>Task title<input autoFocus required value={newItemTitle} onChange={event => setNewItemTitle(event.target.value)}/></label>
         {activeProject && <p>Project: {activeProject.name}</p>}
         {error && <p role="alert" className="error">{error}</p>}
-        <div className="dialogactions"><button type="button" onClick={() => setNewItemView(null)}>Cancel</button><button className="primary" disabled={busy || !newItemTitle.trim()}>Create task</button></div>
+        {newItemView === 'scheduled' && <DateField label="Start Date" value={newItemDate} disabled={busy} onChange={setNewItemDate}/>}<div className="dialogactions"><button type="button" onClick={() => setNewItemView(null)}>Cancel</button><button className="primary" disabled={busy || !newItemTitle.trim()}>Create task</button></div>
       </form>
     </Dialog>}
     {showNewTag && <Dialog title="New tag" onClose={() => setShowNewTag(false)}>

@@ -111,7 +111,7 @@ impl NextleafMcp {
     }
 
     #[tool(
-        description = "List all tags and people, including unused and archived entries. kind distinguishes tag and person.",
+        description = "List all tags and contacts, including unused and archived entries. Contacts use kind person; ordinary tags use kind tag.",
         annotations(read_only_hint = true, open_world_hint = false)
     )]
     async fn list_tags(&self) -> CallToolResult {
@@ -119,7 +119,7 @@ impl NextleafMcp {
     }
 
     #[tool(
-        description = "Create a tag or person (kind: tag or person; default tag). Returns an existing active entry with the same name and kind; archived entries must be restored with update_tag.",
+        description = "Create a tag or contact (kind: tag or person; contacts use person; default tag). Returns an existing active entry with the same name and kind; archived entries must be restored with update_tag.",
         annotations(
             destructive_hint = false,
             idempotent_hint = true,
@@ -131,7 +131,7 @@ impl NextleafMcp {
     }
 
     #[tool(
-        description = "Rename a tag/person, change its kind (tag/person), archive or restore it. Stable ID and task/project assignments are preserved. archived:true hides from new assignments; false restores. Optional expected guards original field values and returns a conflict for stale edits.",
+        description = "Rename a tag/contact, change its kind (tag/person; contacts use person), archive or restore it. Stable ID and task/project assignments are preserved. archived:true hides from new assignments; false restores. Optional expected guards original field values and returns a conflict for stale edits.",
         annotations(open_world_hint = false)
     )]
     async fn update_tag(&self, Parameters(input): Parameters<TagChange>) -> CallToolResult {

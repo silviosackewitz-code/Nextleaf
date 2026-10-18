@@ -22,14 +22,12 @@ export default function TaskDetails({ task, projects, areas, knownTags, people, 
         <TagEditor knownTags={knownTags} areas={areas} areaId={(draft.project_id ? projects.find(p => p.id === draft.project_id)?.area_id : draft.area_id) ?? null} areaDisabled={!!draft.project_id} onAreaChange={area_id => change({ area_id })} tags={draft.tags} disabled={busy} onChange={tags => change({ tags })}/>
         <label className="noteslabel">Notes<textarea disabled={busy} value={draft.notes} onChange={event => change({ notes: event.target.value })}/></label>
         {task.blocked_by_sequence && <p className="hint">Blocked by an earlier task in this sequential project.</p>}
-        {task.status === 'recurring' && <p className="hint">Repeat schedule unavailable from Nirvana. Automatic repeats are not active.</p>}
+        {task.status === 'recurring' && !task.recurrence && <p className="hint">Repeat schedule unavailable from Nirvana. Automatic repeats are not active.</p>}
         <div className="dialogactions desktopeditoractions"><button className="primary" disabled={busy || !dirty || !draft.title.trim()}>Save changes</button><button type="button" disabled={busy} onClick={onCancel}>Cancel</button></div>
       </div>
       <div className="detailfields">
         <TaskFields task={draft} projects={projects} areas={areas} people={people} disabled={busy} onChange={change} groups={['Time', 'Energy', 'Due', 'Status', 'Project']}/>
-        <details className="moreproperties"><summary>More options</summary><div className="secondaryfields">
-          <TaskFields task={draft} projects={projects} areas={areas} people={people} disabled={busy} onChange={change} groups={['Starts', 'Waiting for']}/>
-        </div></details>
+
       </div>
     </div>
   </form>;

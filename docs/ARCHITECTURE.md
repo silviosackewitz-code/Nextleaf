@@ -44,20 +44,27 @@ Imported projects are Parallel. Import dates preserve day precision, ordering
 uses source retrieval order where no explicit order exists, and raw source
 metadata preserves information the application cannot interpret.
 Recurring templates are visible in Scheduled but do not generate occurrences
-without a known recurrence rule. Completion is saved immediately. The frontend
+without a known recurrence rule. `schedule.rs` executes known rules and start dates
+in an immediate transaction. A 30-second worker plus API/sync checks catch up due
+work. Connected desktops never generate locally. Stable UUIDv5 occurrence IDs
+include template, cycle identity, and calendar date; retained task rows prevent
+duplicates even after a copy is deleted. Timezone rules use chrono-tz (including
+DST), not the Pi operating-system timezone. Clock metadata merges by report time;
+it is kept separate from field-conflict resolution for task data. Completion is saved immediately. The frontend
 retains recently completed rows temporarily; Logbook sorts by completion date.
 
 Stable tag IDs preserve task/project associations across rename and kind changes.
-People use `kind=person`; normal contexts use `kind=tag`. Archive retains existing
-links but prevents new direct assignments. Renaming a person updates exactly
+Contacts use the existing `kind=person` wire/storage value; normal contexts use
+`kind=tag`. The UI label is Contacts for both individuals and organizations. Archive retains existing
+links but prevents new direct assignments. Renaming a contact updates exactly
 matching `waiting_for` text; arbitrary Waiting text remains separate. REST/MCP
 continue accepting tag names while the database and sync retain IDs.
 
 ## Desktop sync
 
 `backend/src/sync.rs` implements bidirectional snapshot sync with server identity,
-per-client baseline, and retry protection. Protocol 2 includes tag IDs and kind/
-archive metadata. Old local v1 baselines migrate at startup; pending v1 requests
+per-client baseline, and retry protection. Protocol 3 adds repeat rules and the last active client time zone to protocol 2
+tag metadata. Local v1/v2 baselines migrate at startup; pending older requests
 are reconciled against the retained baseline with a new sequence. Incompatible
 requests fail before mutation. Update the server before desktop clients.
 
@@ -84,7 +91,8 @@ One React frontend serves desktop and web. Native dialog/popover primitives supp
 focus containment and dismissal. Desktop titles open accessible inline editors;
 Save/Cancel/Escape restore focus. TaskFields and TagEditor share form behavior.
 The primary fields are Time, Energy, Due, State, and Project; additional fields
-are under More options. Unsaved drafts require an explicit discard choice.
+are reached through State → Scheduled or State → Waiting. The shared StateField
+serves both draft editing and immediate row actions, with atomic date/state patches. Unsaved drafts require an explicit discard choice.
 
 Quick actions share values with the editor and issue minimal PATCH requests.
 Desktop submenus open to the left, clamp to the viewport, and use controlled

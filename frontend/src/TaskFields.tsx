@@ -2,15 +2,15 @@ import { useId, useRef, useState } from 'react';
 import type { Area, Project, Task } from './api';
 import type { TaskChanges } from './taskEdit';
 import DateField from './DateField';
+import StateField from './StateField';
 import { timeOptions as times } from './quickMenu';
 
-export const propertyGroups = ['Time', 'Energy', 'Due', 'Starts', 'Status', 'Project', 'Area', 'Waiting for', 'Focus'] as const;
+export const propertyGroups = ['Time', 'Energy', 'Due', 'Status', 'Project', 'Area', 'Focus'] as const;
 export type PropertyGroup = typeof propertyGroups[number];
 
 export function TaskFields({ task, projects, areas, people, disabled, onChange, only, groups }: {
   task: Task; projects: Project[]; areas: Area[]; people: string[]; disabled: boolean; onChange: (changes: TaskChanges) => void; only?: PropertyGroup; groups?: readonly PropertyGroup[];
 }) {
-  const peopleId = useId();
   const show = (name: PropertyGroup) => only ? only === name : !groups || groups.includes(name);
   const project = projects.find(item => item.id === task.project_id);
   const areaId = (task.project_id ? project?.area_id : task.area_id) ?? null;
@@ -23,17 +23,13 @@ export function TaskFields({ task, projects, areas, people, disabled, onChange, 
       <option value="">Energy</option><option value="1">Low</option><option value="2">Medium</option><option value="3">High</option>
     </select></label>}
     {show('Due') && <DateField label="Due" value={task.due_date} disabled={disabled} onChange={due_date => onChange({ due_date })}/>}
-    {show('Starts') && <DateField label="Starts" value={task.defer_until} disabled={disabled} onChange={defer_until => onChange({ defer_until })}/>}
-    {show('Status') && <label className="propertyfield"><span aria-hidden="true">⊙</span><select aria-label="Status" disabled={disabled || task.status === 'recurring'} value={task.status} onChange={event => onChange({ status: event.target.value })}>
-      <option value="inbox">Inbox</option><option value="next">Next</option><option value="waiting">Waiting</option><option value="scheduled">Scheduled</option><option value="someday">Someday</option><option value="later">Later</option><option value="completed">Completed</option><option value="trash">Trash</option>{task.status === 'recurring' && <option value="recurring">Recurring</option>}
-    </select></label>}
+    {show('Status') && <StateField task={task} people={people} disabled={disabled} onChange={onChange}/>}
     {show('Project') && <label className="propertyfield"><span aria-hidden="true">→</span><select aria-label="Project" disabled={disabled} value={task.project_id ?? ''} onChange={event => onChange({ project_id: event.target.value || null, area_id: null })}>
       <option value="">Standalone</option>{projects.filter(item => item.status !== 'completed' || item.id === task.project_id).map(item => <option key={item.id} value={item.id}>{item.name}</option>)}
     </select></label>}
     {show('Area') && <label className="propertyfield"><span aria-hidden="true">◇</span><select aria-label="Area" disabled={disabled || !!task.project_id} value={(task.project_id ? project?.area_id : task.area_id) ?? ''} onChange={event => onChange({ area_id: event.target.value || null })}>
       <option value="">No area</option>{areas.filter(area => !area.archived || area.id === areaId).map(area => <option key={area.id} value={area.id}>{area.name}</option>)}
     </select></label>}
-    {show('Waiting for') && <label><input list={peopleId} placeholder="Waiting for" aria-label="Waiting for" disabled={disabled} value={task.waiting_for ?? ''} onChange={event => onChange({ waiting_for: event.target.value || null })}/><datalist id={peopleId}>{people.map(person => <option key={person} value={person}/>)}</datalist></label>}
     {show('Focus') && <label className="focusfield"><input type="checkbox" disabled={disabled} checked={task.starred} onChange={event => onChange({ starred: event.target.checked })}/>Focus</label>}
   </>;
 }
