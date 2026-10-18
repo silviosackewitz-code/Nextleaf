@@ -19,11 +19,20 @@ jobs:
         run: |
           mkdir release-check
           cd release-check
-          BASE=https://github.com/silviosackewitz-code/Nextleaf/releases/download/v0.1.0
+          BASE=https://github.com/silviosackewitz-code/Nextleaf/releases/download/install-v0.1.0-r2
           wget --https-only "$BASE/docker-compose.yml" "$BASE/example.env" "$BASE/SHA256SUMS"
           sha256sum --check --ignore-missing SHA256SUMS
           cmp docker-compose.yml ../deploy/release/docker-compose.yml
           cmp example.env ../deploy/release/example.env
+          docker compose --env-file example.env -f docker-compose.yml config --format json > config.json
+          python3 - <<'PYCONFIG'
+          import json
+          config = json.load(open('config.json'))['services']['nextleaf']
+          assert config['image'] == 'ghcr.io/silviosackewitz-code/nextleaf:0.1.0'
+          mount = next(v for v in config['volumes'] if v['target'] == '/data')
+          assert mount['source'] == '/srv/nextleaf'
+          assert mount['bind']['create_host_path'] is False
+          PYCONFIG
       - name: Pull and install without registry credentials
         shell: bash
         run: |

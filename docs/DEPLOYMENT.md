@@ -24,9 +24,9 @@ mount with correct ownership; Compose does not create it implicitly. A health
 check probes `/api/health`. Healthy runtime alone does not establish sync correctness.
 
 The layout follows [STORAGE.md](STORAGE.md): back up both `/opt/nextleaf-app/`
-and a consistent copy of `/srv/nextleaf/`. The published 0.1.0 environment template
-uses the previous default; set `NEXTLEAF_DATA_DIR=/srv/nextleaf` before starting.
-Compose resolves the explicit environment value in preference to its older fallback.
+and a consistent copy of `/srv/nextleaf/`. Installation revision 2 sets
+`NEXTLEAF_DATA_DIR=/srv/nextleaf` in both the environment template and Compose fallback.
+Existing installations using that path need no reinstall; preserve their `.env`.
 
 ## Normal updates
 
@@ -98,8 +98,11 @@ The owner ran the pi7 updater and reported `NEXTLEAF_UPDATE_OK`; subsequent
 health and API checks confirmed tag-management and sync-v2. A disposable database
 on the Mac was used for offline/MCP/sync verification. The owner subsequently
 removed the old pi7 container, configuration, data, and
-pi7 image during the clean-install walkthrough. Installation under the new
-`/opt/nextleaf-app` and `/srv/nextleaf` layout is still pending.
+pi7 image during the clean-install walkthrough. The owner then completed the new
+installation with configuration under
+`/opt/nextleaf-app` and the documented `/srv/nextleaf` data path. The screenshot
+confirmed a healthy 0.1.0 container, expected API capabilities, and private HTTPS
+forwarding. Browser persistence and native client acceptance are still pending.
 
 The pi7 update package was staged under `data/update-tags-20261018` locally and
 `~/nextleaf-update-tags-20261018` on the Pi. Its backup lives under

@@ -9,19 +9,20 @@ history available in Git.
 Published the public **0.1.0 installation-test prerelease**, GPL-3.0-only, with
 English repository/application text, Linux ARM64/AMD64 images, versioned Compose
 files, an unsigned Apple Silicon DMG, corresponding source, and checksums.
-The local checkout is `Nextleaf`. The owner has begun the clean-install walkthrough.
-The screenshot confirms removal of the pi7 container/network, old configuration/data,
-and pi7 image. Older Nextleaf images were listed; their removal and the release-file
-download/checksum step have not yet been confirmed. Mac/iPhone reset is still pending.
+The local checkout is `Nextleaf`. The owner confirmed removal of the old Mac app,
+its data folders, and iPhone website/app state. The old pi7 container, configuration,
+and data were removed, followed by a fresh public-image installation using the
+new configuration location `/opt/nextleaf-app` and documented `/srv/nextleaf` path.
+The owner's screenshot confirms a healthy 0.1.0 container, loopback port binding,
+`status: ok`, `tag-management`, `sync-v2`, disabled MCP, and private Tailscale HTTPS.
+The owner confirmed browser access on the Mac and creation of the installation
+check task. Private HTTPS health and web-page retrieval also passed from the Mac.
+Reload persistence and fresh native Mac/iPhone acceptance are still pending.
 
-The owner clarified the common storage layout using the existing Immich specification:
-configuration in `/opt/nextleaf-app/`, persistent data in `/srv/nextleaf/`.
-INSTALLATION, DEPLOYMENT, and STORAGE now document those paths and backup scope.
-Release 0.1.0 downloads retain their original checksums; explicitly override
-`NEXTLEAF_DATA_DIR` as shown in the current guide. Next release templates should use
-the new defaults. A read-only Compose configuration check on the Pi confirmed
-`/srv/nextleaf` mounts at `/data`; documentation shell syntax and relative guide
-links passed. No fresh server has yet been verified under the new host paths.
+Installation revision 2 updates the `.env` template and Compose fallback to the
+agreed paths directly; no post-download path correction is needed. It reuses the
+same 0.1.0 image and DMG. The original release remains available. README now explains
+the GTD workflow, device requirements, private hosting, limitations, and feedback.
 
 ## Release verification
 
@@ -74,8 +75,8 @@ test or a complete download-to-clean-Pi installation.
 
 ## Next acceptance steps
 
-1. Finish the owner-led cleanup and verify release downloads; reset old Mac/iPhone replicas.
-2. Owner follows the guide: empty Pi, native Mac, then iPhone web.
+1. Confirm browser access and persistence on the newly installed Pi.
+2. Owner installs the fresh native Mac app, then adds the iPhone web interface.
 3. Check persistence, offline desktop edits, reconnection, concurrent edit conflicts,
    real Safari keyboard/landscape, and Home Screen behavior.
 4. Record actual outcomes and fix installation issues before expanding features.

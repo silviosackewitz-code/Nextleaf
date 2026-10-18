@@ -39,9 +39,10 @@ binds this host directory to `/data` in the container. UID/GID 10001 owns the da
 configuration is root-owned and `.env` has mode 0600. Specify both the Compose file
 and environment file paths when operating the service.
 
-For release 0.1.0, use the unchanged published files, then override the older data
-default in the installed `.env` as shown in [INSTALLATION.md](INSTALLATION.md).
-Do not edit the downloaded originals before verifying their published checksums.
+Use the installation revision 2 downloads linked in [INSTALLATION.md](INSTALLATION.md).
+The `.env` template and Compose fallback already use `/srv/nextleaf`. Verify their
+matching checksums before installation. Older 0.1.0 downloads retain their original
+defaults; an existing installation explicitly using `/srv/nextleaf` needs no reset.
 
 ## What must be recoverable
 

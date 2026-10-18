@@ -1,17 +1,17 @@
 # Install Nextleaf: Raspberry Pi, Mac, and iPhone
 
-Version: **0.1.0 installation-test prerelease**. Install the server first, then the
+Version: **0.1.0 installation-test prerelease, installation files revision 2**. Install the server first, then the
 native Mac app, then the iPhone web interface. This walkthrough starts with empty
 data. It does not import the old test database or Nirvana data.
 
-[Release and downloads](https://github.com/silviosackewitz-code/Nextleaf/releases/tag/v0.1.0)
+[Release and downloads](https://github.com/silviosackewitz-code/Nextleaf/releases/tag/install-v0.1.0-r2)
 
 | Component | Package |
 | --- | --- |
 | Linux server | `ghcr.io/silviosackewitz-code/nextleaf:0.1.0`, ARM64 and AMD64 |
 | Mac | `Nextleaf_0.1.0_aarch64.dmg`, Apple Silicon only |
 | iPhone | Online web interface served by your Linux server |
-| Source | `Nextleaf-0.1.0-source.tar.gz`, GPL-3.0-only |
+| Source | `Nextleaf-0.1.0-install2-source.tar.gz`, GPL-3.0-only |
 
 The Mac DMG is a test build without Apple Developer ID signing or notarization.
 Expect a macOS approval step. Intel Mac, Windows, and Linux desktop installers
@@ -59,9 +59,9 @@ The optional MCP token protects only MCP, not the web, REST, or sync endpoints.
 Use a new download directory. All files below belong to the same release:
 
 ```bash
-mkdir nextleaf-install-0.1.0
-cd nextleaf-install-0.1.0
-NEXTLEAF_RELEASE_BASE=https://github.com/silviosackewitz-code/Nextleaf/releases/download/v0.1.0
+mkdir nextleaf-install-0.1.0-r2
+cd nextleaf-install-0.1.0-r2
+NEXTLEAF_RELEASE_BASE=https://github.com/silviosackewitz-code/Nextleaf/releases/download/install-v0.1.0-r2
 wget --https-only -O docker-compose.yml "$NEXTLEAF_RELEASE_BASE/docker-compose.yml"
 wget --https-only -O example.env "$NEXTLEAF_RELEASE_BASE/example.env"
 wget --https-only -O SHA256SUMS "$NEXTLEAF_RELEASE_BASE/SHA256SUMS"
@@ -79,17 +79,17 @@ replace an existing `.env` during a normal update.
 sudo install -d -m 0750 /opt/nextleaf-app
 sudo install -m 0640 docker-compose.yml /opt/nextleaf-app/docker-compose.yml
 sudo install -m 0600 example.env /opt/nextleaf-app/.env
-sudo sed -i 's|^NEXTLEAF_DATA_DIR=.*|NEXTLEAF_DATA_DIR=/srv/nextleaf|' /opt/nextleaf-app/.env
-sudo nano /opt/nextleaf-app/.env
 ```
 
-The template already selects image `0.1.0`. Keep that version for this test.
-`NEXTLEAF_DATA_DIR` must be `/srv/nextleaf` for this layout. The published 0.1.0
-template still contains the older `/var/lib/nextleaf` default; the command above
-changes it explicitly. The published files and their checksums remain unchanged.
-Leave `NEXTLEAF_MCP_TOKEN`
-empty for the first test; MCP will be disabled. Later integration is covered in
-[MCP.md](MCP.md). Use the exact private hostname in `NEXTLEAF_MCP_HOSTS` if enabling MCP.
+The template selects image `0.1.0` and `NEXTLEAF_DATA_DIR=/srv/nextleaf` directly.
+No path correction or manual environment edit is needed for this first installation.
+`NEXTLEAF_MCP_TOKEN` is empty, so MCP starts disabled. Later integration is covered
+in [MCP.md](MCP.md). Use the exact private hostname in `NEXTLEAF_MCP_HOSTS` if enabling MCP.
+
+Revision 2 changes installation defaults and documentation only. The server image
+and Mac DMG are unchanged from 0.1.0. Earlier downloads remain available under the
+original release; use the revision 2 files and their matching checksums together.
+If you already installed with `/srv/nextleaf`, keep your existing `.env` and data.
 
 Create the persistent data directory. Adjust the path if you changed it in `.env`:
 

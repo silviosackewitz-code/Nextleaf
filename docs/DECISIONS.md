@@ -4,6 +4,17 @@ Consolidated English record. Later decisions supersede earlier ones where stated
 Git history retains the original development notes. Dates are decision dates,
 not promises that every target platform was tested.
 
+## 2026-10-18: ship the agreed paths as installation defaults
+
+The owner requested the actual environment template be updated immediately, along
+with more explanatory GitHub text. Publish installation files revision 2 under
+`install-v0.1.0-r2`, with `/srv/nextleaf` in `.env` and the Compose fallback, and
+`/opt/nextleaf-app` in installation instructions and errors. This supersedes the
+plan to wait for the next application release. The 0.1.0 image and Mac DMG remain
+unchanged; distribute the revised configuration, guide, corresponding source, and
+matching checksums together. Preserve original release downloads. An installation
+already using the agreed paths does not need to be reset or have its `.env` replaced.
+
 ## 2026-10-18: shared application directories and explicit backup scope
 
 The owner supplied the existing Immich directory specification and requested the

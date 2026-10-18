@@ -115,9 +115,9 @@ application login. MCP authentication does not protect those other endpoints.
 `deploy/release/docker-compose.yml` and `example.env` select a published version.
 Configuration belongs in `/opt/nextleaf-app`; data belongs in `/srv/nextleaf`.
 This follows the owner's shared application layout in [STORAGE.md](STORAGE.md).
-The immutable 0.1.0 release templates retain their original defaults; the current
-installation guide explicitly sets `NEXTLEAF_DATA_DIR=/srv/nextleaf` and supplies
-the new configuration paths to Compose.
+Installation revision 2 updates the `.env` template and Compose fallback to
+`/srv/nextleaf` and documents configuration under `/opt/nextleaf-app`. Original
+0.1.0 release assets remain available; the revision reuses the same image and DMG.
 Use one consistent backup with matching version/config; do not downgrade a migrated
 SQLite database in place. See [DEPLOYMENT.md](DEPLOYMENT.md).
 

@@ -12,7 +12,7 @@ must be English; conversation stays German. The local checkout is now `Nextleaf`
 
 Release 0.1.0 is published with tested ARM64/AMD64 images, an unsigned Apple Silicon
 DMG, corresponding source, checksums, and the English install guide. Both anonymous
-installation jobs passed; exact evidence and remaining device checks are in NEXT_STEPS. The owner is now removing old installations and testing a fresh setup, Pi first. Test tasks are disposable and still exist in Nirvana. The old Pi test installation has been removed; client reset is still pending.
+installation jobs passed; exact evidence and remaining device checks are in NEXT_STEPS. The owner is now removing old installations and testing a fresh setup, Pi first. Test tasks are disposable and still exist in Nirvana. The old Pi test installation and Mac/iPhone state were removed. The fresh Pi container is healthy; browser and client acceptance are still pending.
 No Apple Developer membership/certificate is available, so do not claim notarization.
 
 ## Repository and runtime
@@ -26,18 +26,17 @@ and local stdio MCP. React is shared between browser and desktop. Desktop owns
 its local SQLite data and syncs privately; phone web is online-only. Protocol 2
 retains tag IDs, People kinds, archives, and field-level conflict behavior.
 
-The owner has now removed the pi7 container/network, its old configuration/data,
-and pi7 image. Cleanup of older Nextleaf images and release-file download verification
-are not yet confirmed. Mac and iPhone reset is pending; keep old replicas closed.
+The owner confirmed Mac data-folder deletion and iPhone cleanup, then installed
+the public 0.1.0 image with the new layout. Screenshot evidence shows a healthy
+container, expected API capabilities, and private HTTPS forwarding. The next user
+step is to create an Installation check task in the browser and reload, followed
+by the fresh Mac installation and iPhone web setup.
 
-The agreed shared layout is `/opt/nextleaf-app/` for Compose and `.env`, with data
-under `/srv/nextleaf/`. This mirrors the supplied Immich directory specification.
-Back up both, using a consistent SQLite copy. See STORAGE and the updated installation
-guide. Published 0.1.0 defaults still point to `/var/lib/nextleaf`; the guide overrides
-`NEXTLEAF_DATA_DIR` explicitly. Do not replace already-published assets or checksums.
-The new host-path installation and full device acceptance are not yet complete.
-Pi administrative steps require the owner's sudo access; do not claim installation
-from runner-only tests or configure backup schedules without a separate request.
+Configuration belongs in `/opt/nextleaf-app/`; persistent data is `/srv/nextleaf/`.
+Back up both consistently. Installation revision 2 (`install-v0.1.0-r2`) updates
+`.env` and Compose defaults directly, reuses the 0.1.0 image/DMG, and preserves the
+original downloads. No reinstall is needed for the owner's correctly configured
+server. Do not replace its `.env`, reset its data, or configure backup schedules.
 
 ## Preserve these constraints
 

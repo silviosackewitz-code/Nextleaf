@@ -22,7 +22,7 @@ Follow the [installation guide](docs/INSTALLATION.md) for the complete path:
 3. Install the native Mac app from the DMG and connect it to your server.
 4. Open the same private address on your iPhone.
 
-[Release downloads](https://github.com/silviosackewitz-code/Nextleaf/releases/tag/v0.1.0)
+[Release downloads](https://github.com/silviosackewitz-code/Nextleaf/releases/tag/install-v0.1.0-r2)
 include versioned configuration, checksums, corresponding source, and the Mac DMG.
 The first release is an **installation-test prerelease**, not a production release.
 The Mac package is for **Apple Silicon** and is not Developer ID signed or notarized.
@@ -32,6 +32,31 @@ The server currently has no web login. Keep it on a trusted private network;
 the supplied Compose file binds to loopback and the guide uses Tailscale Serve.
 The iPhone web interface requires an available server. It is not an offline app.
 
+## How Nextleaf fits into your day
+
+Capture a task in Inbox, give it a project or area when you are ready, and use
+Next to see available actions. Parallel projects let you choose among actions;
+Sequential projects keep the first unfinished action in front. Waiting helps you
+track follow-ups, and Focus highlights the tasks you want to keep in sight.
+
+Use the native Mac app for daily work, including when your server is unreachable.
+It stores tasks locally and synchronizes after you reconnect. Conflicting edits
+are shown for you to resolve. On iPhone, the web interface connects directly to
+your server; add it to your Home Screen for convenient access.
+
+## Choose your setup
+
+| Component | What you need | What it does |
+| --- | --- | --- |
+| Server | Raspberry Pi with 64-bit Linux, or an AMD64 Linux server; Docker Compose | Stores shared data and serves the web interface |
+| Mac | Apple Silicon Mac; downloadable DMG | Native desktop client with local storage and offline edits |
+| iPhone | Safari and a connection to your private server | Responsive online web interface; optional Home Screen icon |
+| Private connection | Tailscale on the server and clients | HTTPS access within your trusted tailnet |
+
+Nextleaf currently targets a personal, trusted setup. There are no user accounts,
+team permissions, or public web login. Host it privately. A native iPhone app,
+offline phone editing, and automatic desktop updates are not part of this release.
+
 ## Where your data lives
 
 | Server folder | Contents | Backup |
@@ -40,7 +65,8 @@ The iPhone web interface requires an available server. It is not an offline app.
 | `/srv/nextleaf/` | Persistent SQLite task database | Consistent copy of the entire folder |
 
 The [installation guide](docs/INSTALLATION.md) sets these paths explicitly for
-release 0.1.0. Docker images can be downloaded again. See the
+release 0.1.0, installation revision 2. The environment template already contains
+these defaults. Docker images can be downloaded again. See the
 [backup instructions](docs/DEPLOYMENT.md#consistent-backup-and-restore) before
 copying a running database. For a clean restart, follow the
 [removal steps](docs/INSTALLATION.md#8-remove-the-old-test-installation-before-starting-over).
@@ -57,6 +83,14 @@ copying a running database. For a clean restart, follow the
 
 Saved Perspectives, guided Review, native iPhone support, and Windows/Linux desktop
 installers remain future work. See [current status](docs/NEXT_STEPS.md).
+
+## Feedback
+
+This is an early installation-test release. Reports from real installations help
+identify what needs fixing. [Open an issue](https://github.com/silviosackewitz-code/Nextleaf/issues)
+with your OS, device architecture, Nextleaf version, reproduction steps, and the
+expected and actual result. Remove tokens, private task content, and other secrets
+from logs or screenshots before posting.
 
 ## Develop
 
