@@ -49,7 +49,7 @@ with tempfile.TemporaryDirectory(prefix='nextleaf-container-check-') as temporar
         request('/api/tasks/' + task['id'], {'tags': ['Release contact'], 'waiting_for': 'Release contact'}, 'PATCH')
         request('/api/tags/' + person['id'], {'name': 'Renamed contact'}, 'PATCH')
         subprocess.run(['python3', str(repo / 'deploy/check_mcp.py'), '--url', base + '/mcp'], env=env, check=True)
-        updated = request('/api/tasks/' + task['id'])
+        updated = next(item for item in request('/api/tasks?view=waiting') if item['id'] == task['id'])
         assert updated['tags'] == ['Renamed contact']
         assert updated['waiting_for'] == 'Renamed contact'
         before = request('/api/sync')
