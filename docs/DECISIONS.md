@@ -4,6 +4,16 @@ Consolidated English record. Later decisions supersede earlier ones where stated
 Git history retains the original development notes. Dates are decision dates,
 not promises that every target platform was tested.
 
+## 2026-10-18: visible installation and download guidance
+
+The owner could not identify the Mac installer or find Linux installation commands
+on the GitHub Code page. Put the complete first-install server command sequence in
+README, explain Apple Silicon/M-series versus Intel next to the Mac download, and
+use a human-readable release asset label. Keep existing filenames and checksums
+so earlier download links remain valid. Add relevant product topics to GitHub's
+About section for discovery, including task-management, todo-list, productivity,
+and getting-things-done alongside the existing task-manager and self-hosted topics.
+
 ## 2026-10-18: ship the agreed paths as installation defaults
 
 The owner requested the actual environment template be updated immediately, along

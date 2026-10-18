@@ -13,24 +13,126 @@ install the native macOS client from a DMG and use Safari on iPhone.
 
 Nextleaf is open source under the **GNU GPL v3.0**.
 
-## Install
+## Install Nextleaf
 
-Follow the [installation guide](docs/INSTALLATION.md) for the complete path:
+Start with the Linux server, then install the Mac app, then open Nextleaf on iPhone.
+The commands below are for a **fresh installation** of application 0.1.0 with
+installation files revision 2. The release is an **installation-test prerelease**.
+For removal, updates, backups, and detailed verification, use the
+[complete installation guide](docs/INSTALLATION.md).
 
-1. Download the Compose and environment files on your Raspberry Pi or Linux server.
-2. Pull the prebuilt container and connect through private Tailscale HTTPS.
-3. Install the native Mac app from the DMG and connect it to your server.
-4. Open the same private address on your iPhone.
+### 1. Linux server: Raspberry Pi or AMD64
 
-[Release downloads](https://github.com/silviosackewitz-code/Nextleaf/releases/tag/install-v0.1.0-r2)
-include versioned configuration, checksums, corresponding source, and the Mac DMG.
-The first release is an **installation-test prerelease**, not a production release.
-The Mac package is for **Apple Silicon** and is not Developer ID signed or notarized.
-Server images target **Linux ARM64 and AMD64**.
+You need a 64-bit Linux server with Docker Engine, the Docker Compose plugin,
+`wget`, `curl`, `sha256sum`, and Tailscale already installed and connected.
+The server images support **Linux ARM64** (including Raspberry Pi) and **AMD64**.
 
-The server currently has no web login. Keep it on a trusted private network;
-the supplied Compose file binds to loopback and the guide uses Tailscale Serve.
-The iPhone web interface requires an available server. It is not an offline app.
+Run each block on your server, in order. Stop if any command fails.
+
+**Download and verify the installation files:**
+
+```bash
+mkdir -p ~/nextleaf-install-0.1.0-r2 &&
+cd ~/nextleaf-install-0.1.0-r2 &&
+wget --https-only -O docker-compose.yml https://github.com/silviosackewitz-code/Nextleaf/releases/download/install-v0.1.0-r2/docker-compose.yml &&
+wget --https-only -O example.env https://github.com/silviosackewitz-code/Nextleaf/releases/download/install-v0.1.0-r2/example.env &&
+wget --https-only -O SHA256SUMS https://github.com/silviosackewitz-code/Nextleaf/releases/download/install-v0.1.0-r2/SHA256SUMS &&
+sha256sum --check --ignore-missing SHA256SUMS
+```
+
+Continue only when both `docker-compose.yml` and `example.env` report **OK**.
+
+**Create the configuration and empty data directories:**
+
+```bash
+cd ~/nextleaf-install-0.1.0-r2 &&
+sudo install -d -m 0750 /opt/nextleaf-app &&
+sudo install -m 0640 docker-compose.yml /opt/nextleaf-app/docker-compose.yml &&
+sudo install -m 0600 example.env /opt/nextleaf-app/.env &&
+sudo install -d -o 10001 -g 10001 -m 0700 /srv/nextleaf
+```
+
+These are first-install commands. Do not replace an existing `.env` during an
+update, and start with an empty data directory for a clean-install test. The
+template already sets `NEXTLEAF_DATA_DIR=/srv/nextleaf`; no manual edit is needed.
+
+**Pull the image and start Nextleaf:**
+
+```bash
+sudo docker compose --env-file /opt/nextleaf-app/.env -f /opt/nextleaf-app/docker-compose.yml config --quiet &&
+sudo docker compose --env-file /opt/nextleaf-app/.env -f /opt/nextleaf-app/docker-compose.yml pull &&
+sudo docker compose --env-file /opt/nextleaf-app/.env -f /opt/nextleaf-app/docker-compose.yml up -d --wait
+```
+
+**Check the running server:**
+
+```bash
+sudo docker compose --env-file /opt/nextleaf-app/.env -f /opt/nextleaf-app/docker-compose.yml ps
+curl --fail --show-error http://127.0.0.1:8787/api/health
+```
+
+Expect **healthy** and JSON with `"status":"ok"`. The image is prebuilt; no source
+compilation is needed. For troubleshooting:
+
+```bash
+sudo docker compose --env-file /opt/nextleaf-app/.env -f /opt/nextleaf-app/docker-compose.yml logs --tail 100
+```
+
+**Connect through private HTTPS:**
+
+First inspect the existing proxy configuration:
+
+```bash
+sudo tailscale serve status
+```
+
+If the HTTPS endpoint is available for Nextleaf, configure it as follows. If it
+already proxies to `http://127.0.0.1:8787`, no change is needed. Do not overwrite
+another application's proxy; see the [full guide](docs/INSTALLATION.md#4-enable-private-https).
+
+```bash
+sudo tailscale serve --bg http://127.0.0.1:8787
+sudo tailscale serve status
+```
+
+Open the HTTPS address displayed by Tailscale from a connected Mac or iPhone.
+Nextleaf currently has **no web login**: only trusted users in your private tailnet
+should have access. Do not expose the port publicly or enable Tailscale Funnel.
+Server MCP starts disabled until you configure a token; ordinary web access and
+Mac synchronization do not depend on it.
+
+### 2. Mac: download the macOS installer
+
+**Choose “Nextleaf for macOS — Apple Silicon (M-series) — DMG installer” under
+Releases → Nextleaf 0.1.0 — Installation revision 2 → Assets.**
+
+The downloaded filename is `Nextleaf_0.1.0_aarch64.dmg`. **This is a Mac installer**:
+`aarch64` is the technical name for the processor architecture used by Apple
+Silicon Macs. It does not mean Linux.
+
+| Your Mac, shown under Apple menu → About This Mac | Download |
+| --- | --- |
+| **Chip: Apple M…** (Apple Silicon / M-series) | `Nextleaf_0.1.0_aarch64.dmg` |
+| **Processor: Intel…** | No compatible installer in this release |
+
+On this repository's **Code** page, find **Releases** in the sidebar, open the
+release, and expand **Assets**. Choose the DMG above; **Source code** is for
+building the app yourself. If the sidebar is hidden on a narrow screen, use
+[the releases page](https://github.com/silviosackewitz-code/Nextleaf/releases).
+
+Verify the DMG against the release's `SHA256SUMS`, open it, drag **Nextleaf** into
+**Applications**, and eject the disk image. Open the installed app and enter your
+private server address under **Settings → Local data and sync → Connect and sync**.
+
+The Mac package is a test build **without Apple Developer ID signing or notarization**.
+If macOS blocks the first launch, follow the [Mac installation steps](docs/INSTALLATION.md#5-install-the-native-mac-app).
+Do not disable Gatekeeper globally.
+
+### 3. iPhone: open the web interface
+
+Connect Tailscale, open the same private HTTPS address in Safari, then optionally
+choose **Share → Add to Home Screen**. This is an **online web interface** and
+requires your server to be available; it is not a native offline iPhone app.
 
 ## How Nextleaf fits into your day
 

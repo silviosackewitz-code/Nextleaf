@@ -24,6 +24,12 @@ agreed paths directly; no post-download path correction is needed. It reuses the
 same 0.1.0 image and DMG. The original release remains available. README now explains
 the GTD workflow, device requirements, private hosting, limitations, and feedback.
 
+The GitHub Code-page README now includes the full Linux first-install commands,
+plus visible macOS Apple Silicon/M-series versus Intel guidance and the route to
+Releases → Assets. Both Mac release assets have a plain-language display label;
+filenames and checksums are unchanged. Repository topics include task-manager,
+task-management, todo-list, productivity, getting-things-done, and self-hosted.
+
 ## Installation revision 2 verification
 
 [Revision 2](https://github.com/silviosackewitz-code/Nextleaf/releases/tag/install-v0.1.0-r2)

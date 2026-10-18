@@ -140,6 +140,17 @@ for this clean-install test.
 
 ## 5. Install the native Mac app
 
+**This release is for macOS on Apple Silicon (M-series), not Intel Macs.** In
+Apple menu → About This Mac, check whether it says **Chip: Apple M…** or
+**Processor: Intel…**. `aarch64` in the filename means the Apple Silicon processor
+architecture; the `.dmg` file is the macOS installer.
+
+On the repository's Code page, open **Releases** in the sidebar, choose
+**Nextleaf 0.1.0 — Installation revision 2**, and expand **Assets**. Select
+**Nextleaf for macOS — Apple Silicon (M-series) — DMG installer**.
+The downloaded file is named `Nextleaf_0.1.0_aarch64.dmg`. Source-code archives
+are for developers and are not the installer.
+
 1. Download `Nextleaf_0.1.0_aarch64.dmg` and `SHA256SUMS` from the release.
    In Terminal, run `shasum -a 256` on the downloaded DMG and compare its full
    hash with that file's entry in `SHA256SUMS`.
