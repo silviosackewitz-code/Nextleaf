@@ -31,7 +31,8 @@ jobs:
           assert config['image'] == 'ghcr.io/silviosackewitz-code/nextleaf:0.1.0'
           mount = next(v for v in config['volumes'] if v['target'] == '/data')
           assert mount['source'] == '/srv/nextleaf'
-          assert mount['bind']['create_host_path'] is False
+          # Compose versions may omit false fields from normalized JSON.
+          assert mount.get('bind', {}).get('create_host_path', False) is False
           PYCONFIG
       - name: Pull and install without registry credentials
         shell: bash
