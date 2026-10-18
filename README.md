@@ -57,13 +57,16 @@ The desktop embeds the backend and creates its own local database. For web devel
 start the server and frontend in separate terminals:
 
 ```bash
-cargo run --locked --manifest-path backend/Cargo.toml
+cd backend
+cargo run --locked
 ```
 
 ```bash
 npm run web:dev
 ```
 
+Run the frontend command from the repository root. The backend defaults to paths
+relative to `backend/`; run it there unless configuring explicit paths.
 The Vite proxy targets the local backend. Never commit the generated database or `.env`.
 
 ```bash

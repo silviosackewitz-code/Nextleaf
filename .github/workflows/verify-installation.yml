@@ -1,0 +1,33 @@
+name: Verify public installation
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  install:
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [ubuntu-24.04, ubuntu-24.04-arm]
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Download and verify release files without authentication
+        run: |
+          mkdir release-check
+          cd release-check
+          BASE=https://github.com/silviosackewitz-code/Nextleaf/releases/download/v0.1.0
+          wget --https-only "$BASE/docker-compose.yml" "$BASE/example.env" "$BASE/SHA256SUMS"
+          sha256sum --check --ignore-missing SHA256SUMS
+          cmp docker-compose.yml ../deploy/release/docker-compose.yml
+          cmp example.env ../deploy/release/example.env
+      - name: Pull and install without registry credentials
+        shell: bash
+        run: |
+          export DOCKER_CONFIG="$(mktemp -d)"
+          IMAGE=ghcr.io/silviosackewitz-code/nextleaf:0.1.0
+          docker pull "$IMAGE"
+          python3 deploy/check_container.py --image "$IMAGE"
