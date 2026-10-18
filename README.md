@@ -4,7 +4,17 @@ Projektname: **Nextleaf**. Der lokale Checkout-Ordner heißt derzeit weiterhin `
 
 Ein GTD-Task-Manager nach dem **einfachen Bedienprinzip von Nirvana HQ** mit OmniFocus-inspirierter Sequential-Logik, später eigenen Perspectives und MCP. Eigenständiges Open-Source-fähiges Projekt; kein Code von Nirvana oder OmniFocus enthalten.
 
-## Voraussetzungen auf dem Mac
+## Installation für Anwender
+
+[Installationsanleitung für Pi, Mac und iPhone](docs/INSTALLATION.md).
+Sie beschreibt den Download-/Compose-Weg, die native Mac-App, die iPhone-Web-App
+und den geplanten Neustart mit leeren Daten. **Release-Downloads, Container-Registry
+und signiertes Mac-DMG sind noch nicht veröffentlicht.** Der aktuelle Testbetrieb
+und Prüfstand stehen in [NEXT_STEPS.md](docs/NEXT_STEPS.md).
+
+Die folgenden Befehle richten eine **Entwicklungsumgebung** ein.
+
+## Voraussetzungen für Entwicklung auf dem Mac
 - Rust (`rustup`, inklusive Cargo)
 - Node.js (aktuelle LTS-Version) und npm
 - Xcode Command Line Tools (`xcode-select --install`), für Tauri auf macOS außerdem die üblichen Tauri-Systemvoraussetzungen
@@ -13,7 +23,7 @@ Rust lässt sich über den offiziellen Installer auf <https://rustup.rs> einrich
 Falls Cargo noch nicht im Suchpfad liegt, `source "$HOME/.cargo/env"` ausführen.
 Mit `rustc --version`, `cargo --version`, `node --version` und `npm --version` prüfen.
 
-## Installation
+## Entwicklungsumgebung einrichten
 
 Im Repository-Verzeichnis arbeiten. Die folgenden Beispiele verwenden
 `~/Developer/repo/TaskManager`; bei einem anderen Speicherort den Pfad entsprechend ersetzen.
@@ -52,7 +62,9 @@ cd ~/Developer/repo/TaskManager
 npm run desktop:dev
 ```
 
-Auch für die Desktop-App muss der Rust-Server **separat laufen**. Das automatische Starten des Servers als Sidecar folgt in einem späteren Entwicklungsschritt.
+Die Desktop-App enthält den Rust-Fachcode und eine lokale SQLite-Datenbank.
+Ein separater Backend-Prozess ist dafür nicht nötig. Den Pi-Abgleich in Settings
+ausdrücklich verbinden; ohne Pi bleibt die Desktop-App lokal nutzbar.
 
 ### Statische Web-App über den Rust-Server
 
@@ -65,14 +77,10 @@ cargo run
 
 Danach ist bei vorhandenem `frontend/dist` die Weboberfläche unter <http://127.0.0.1:8787> erreichbar.
 
-### iPhone im lokalen WLAN (nur später bei Bedarf)
+### iPhone-Web-App
 
-Der Server bindet standardmäßig aus Sicherheitsgründen an `127.0.0.1`. Für Tests im **privaten WLAN** kann man ihn gezielt unter `0.0.0.0:8787` starten (und die Web-App vorher bauen). Ohne Authentifizierung **niemals** einen öffentlichen Port freigeben. Auf dem iPhone dann `http://<mac-ip>:8787` im Browser öffnen.
-
-```bash
-cd ~/Developer/repo/TaskManager/backend
-TASKMANAGER_BIND=0.0.0.0:8787 cargo run
-```
+Die mobile Web-App wird vom Pi über die private Tailscale-HTTPS-Adresse geöffnet.
+Einrichtung und Home-Bildschirm: [Installationsanleitung](docs/INSTALLATION.md).
 
 ## Raspberry Pi mit Docker
 
@@ -80,18 +88,16 @@ Dockerfile und Compose-Konfiguration sind vorbereitet. Einrichtung, Tailscale,
 Persistenzprüfung und Backup/Restore stehen in [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
 Konfiguration liegt auf dem Pi unter `/etc/nextleaf`, Daten unter
 `/var/lib/nextleaf`. Der Container veröffentlicht nur einen lokalen Host-Port.
-Der tatsächliche Docker-/ARM64-Test auf dem Pi steht noch aus.
+pi7 läuft auf ARM64 und wurde nach dem Update geprüft. Der öffentliche
+Download-/Pull-Installationsweg bleibt bis zur Release-Veröffentlichung offen.
 
-## Erste Funktionen im Gerüst
-- Areas erstellen
-- Parallele und sequenzielle Projekte erstellen
-- Aufgaben in Inbox oder Next/Waiting/Scheduled/Someday anlegen
-- Aufgaben abschließen und wieder öffnen
-- Globale GTD-Listen anzeigen und Projekte/Areas filtern
-- In globaler **Next**-Ansicht erscheinen bei sequenziellen Projekten nur die ersten offenen verfügbaren Aufgaben
-- Server-URL in der Desktop-Oberfläche manuell anpassen (für Windows/Linux-Clients im LAN)
+## Funktionsstand
 
-**Noch nicht implementiert:** Tags-UI, Focus, Datumsverwaltung, Reihenfolge verschieben, editierbare Projekte, gespeicherte Perspectives, MCP, Authentifizierung, Sync, native iPhone-App, Desktop-Server-Sidecar. Sie sind geplant, nicht als fertig markieren.
+Aufgaben, Projekte, Areas, Tags/Personen, Focus, Termine und Waiting-Kontakte
+sind bearbeitbar. Desktop speichert lokal und synchronisiert zum Pi; die
+mobile Web-App bleibt online. REST und MCP verwenden denselben Rust-Fachcode.
+Perspectives, Review und native iPhone-Offline-App sind noch nicht implementiert.
+Die vollständigen Regeln stehen in [SPECIFICATION.md](docs/SPECIFICATION.md).
 
 ## Struktur
 
@@ -106,19 +112,8 @@ docs/         Spezifikation und Architektur
 data/         lokale SQLite-Dateien, nicht in Git
 ```
 
-## Git
+## Entwicklung und Freigabe
 
-Nach erfolgreichem Einrichten:
-
-```bash
-git add .
-git commit -m "Initiales TaskManager-Geruest"
-```
-
-Die `.gitignore` schützt DB-Dateien, `node_modules`, Rust-Build-Artefakte und lokale Secrets. Für eine zuverlässige Entwicklungsumgebung bei späterer Nutzung `Cargo.lock` und die npm-Lockfiles nach Installation committen.
-
-## Hinweis
-Dieses Repository ist ein **Starterprojekt**, noch keine fertige Task-Manager-Anwendung.
-Backend-Tests, API, SQLite und Web-App wurden auf macOS geprüft; Tauri-Entwicklungsbuild
-und macOS-App-Bundle bauen erfolgreich. Die native Sichtprüfung sowie Windows/Linux-
-und Release-Tests stehen noch aus. Details stehen in [docs/NEXT_STEPS.md](docs/NEXT_STEPS.md).
+Lokale Daten und Secrets sind durch `.gitignore` ausgeschlossen. Vor Änderungen
+[AGENTS.md](AGENTS.md) lesen. Windows/Linux, signierte Release-Pakete und die
+Erstinstallation über veröffentlichte Downloads sind getrennt zu prüfen.

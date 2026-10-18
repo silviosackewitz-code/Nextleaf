@@ -22,3 +22,7 @@ node_modules/
 .DS_Store
 .idea/
 .vscode/
+
+# Python validation caches
+__pycache__/
+*.pyc
