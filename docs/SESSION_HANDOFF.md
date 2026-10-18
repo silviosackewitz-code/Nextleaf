@@ -15,6 +15,14 @@ DMG, corresponding source, checksums, and the English install guide. Both anonym
 installation jobs passed; exact evidence and remaining device checks are in NEXT_STEPS. The owner is now removing old installations and testing a fresh setup, Pi first. Test tasks are disposable and still exist in Nirvana. The old Pi test installation and Mac/iPhone state were removed. The fresh Pi container is healthy; browser and client acceptance are still pending.
 No Apple Developer membership/certificate is available, so do not claim notarization.
 
+## Current Mac packaging correction
+
+The owner reached a "damaged" alert with the downloaded Mac DMG. Hashes matched,
+but the original app bundle failed strict codesign resource verification. Revision
+3 enables Tauri ad-hoc bundle signing and a macOS Apple Silicon filename. Do not
+use the older DMGs for the clean-install acceptance test or bypass quarantine.
+See NEXT_STEPS for actual verification results. The live Pi must remain untouched.
+
 ## Repository and runtime
 
 Repository: https://github.com/silviosackewitz-code/Nextleaf, branch `main`.

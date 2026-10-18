@@ -36,6 +36,9 @@
     "resources": {
       "../LICENSE": "LICENSE",
       "../THIRD_PARTY_NOTICES.txt": "THIRD_PARTY_NOTICES.txt"
+    },
+    "macOS": {
+      "signingIdentity": "-"
     }
   }
 }

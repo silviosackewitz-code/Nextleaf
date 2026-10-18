@@ -4,6 +4,20 @@ Updated: 2026-10-18. Historical duplicate status notes have been consolidated;
 requirements and reasons remain in SPECIFICATION and DECISIONS, with original
 history available in Git.
 
+## Current Mac installation blocker
+
+The owner's browser-downloaded Mac installer reported "damaged". Both downloaded
+DMGs matched the published SHA-256, but strict app-bundle signature verification
+failed. This corrects the earlier statement that no release defect was found:
+that statement applied to the Compose checks, while the Mac bundle seal had not
+been checked. Revision 3 enables complete Tauri ad-hoc bundle signing and uses a
+plain-language macOS Apple Silicon filename. The rebuilt final DMG passed image
+integrity and strict deep bundle verification, including a sealed resource manifest.
+The mounted app passed isolated local MCP startup, 13-tool enumeration, tag edits,
+and restart persistence with SQLite integrity. TypeScript/Vite and the Tauri release
+build passed. Downloaded GUI launch with quarantine intact remains an owner check.
+The Pi remains healthy and no server reinstall is needed.
+
 ## Current milestone
 
 Published the public **0.1.0 installation-test prerelease**, GPL-3.0-only, with

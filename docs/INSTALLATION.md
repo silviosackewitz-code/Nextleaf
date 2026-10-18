@@ -1,17 +1,17 @@
 # Install Nextleaf: Raspberry Pi, Mac, and iPhone
 
-Version: **0.1.0 installation-test prerelease, installation files revision 2**. Install the server first, then the
+Version: **0.1.0 installation-test prerelease, installation files revision 3**. Install the server first, then the
 native Mac app, then the iPhone web interface. This walkthrough starts with empty
 data. It does not import the old test database or Nirvana data.
 
-[Release and downloads](https://github.com/silviosackewitz-code/Nextleaf/releases/tag/install-v0.1.0-r2)
+[Release and downloads](https://github.com/silviosackewitz-code/Nextleaf/releases/tag/install-v0.1.0-r3)
 
 | Component | Package |
 | --- | --- |
 | Linux server | `ghcr.io/silviosackewitz-code/nextleaf:0.1.0`, ARM64 and AMD64 |
-| Mac | `Nextleaf_0.1.0_aarch64.dmg`, Apple Silicon only |
+| Mac | `Nextleaf-0.1.0-macOS-Apple-Silicon-r3.dmg`, Apple Silicon only |
 | iPhone | Online web interface served by your Linux server |
-| Source | `Nextleaf-0.1.0-install2-source.tar.gz`, GPL-3.0-only |
+| Source | `Nextleaf-0.1.0-install3-source.tar.gz`, GPL-3.0-only |
 
 The Mac DMG is a test build without Apple Developer ID signing or notarization.
 Expect a macOS approval step. Intel Mac, Windows, and Linux desktop installers
@@ -59,9 +59,9 @@ The optional MCP token protects only MCP, not the web, REST, or sync endpoints.
 Use a new download directory. All files below belong to the same release:
 
 ```bash
-mkdir nextleaf-install-0.1.0-r2
-cd nextleaf-install-0.1.0-r2
-NEXTLEAF_RELEASE_BASE=https://github.com/silviosackewitz-code/Nextleaf/releases/download/install-v0.1.0-r2
+mkdir nextleaf-install-0.1.0-r3
+cd nextleaf-install-0.1.0-r3
+NEXTLEAF_RELEASE_BASE=https://github.com/silviosackewitz-code/Nextleaf/releases/download/install-v0.1.0-r3
 wget --https-only -O docker-compose.yml "$NEXTLEAF_RELEASE_BASE/docker-compose.yml"
 wget --https-only -O example.env "$NEXTLEAF_RELEASE_BASE/example.env"
 wget --https-only -O SHA256SUMS "$NEXTLEAF_RELEASE_BASE/SHA256SUMS"
@@ -86,9 +86,10 @@ No path correction or manual environment edit is needed for this first installat
 `NEXTLEAF_MCP_TOKEN` is empty, so MCP starts disabled. Later integration is covered
 in [MCP.md](MCP.md). Use the exact private hostname in `NEXTLEAF_MCP_HOSTS` if enabling MCP.
 
-Revision 2 changes installation defaults and documentation only. The server image
-and Mac DMG are unchanged from 0.1.0. Earlier downloads remain available under the
-original release; use the revision 2 files and their matching checksums together.
+Revision 3 corrects the incomplete Mac app-bundle signature in earlier downloads.
+It uses a complete ad-hoc test signature; Apple Developer ID and notarization are
+still unavailable. The Linux image and configuration remain unchanged from
+installation revision 2. Use revision 3 downloads and their matching checksums.
 If you already installed with `/srv/nextleaf`, keep your existing `.env` and data.
 
 Create the persistent data directory. Adjust the path if you changed it in `.env`:
@@ -142,20 +143,19 @@ for this clean-install test.
 
 **This release is for macOS on Apple Silicon (M-series), not Intel Macs.** In
 Apple menu → About This Mac, check whether it says **Chip: Apple M…** or
-**Processor: Intel…**. `aarch64` in the filename means the Apple Silicon processor
-architecture; the `.dmg` file is the macOS installer.
+**Processor: Intel…**. The `.dmg` file is the macOS installer.
 
 On the repository's Code page, open **Releases** in the sidebar, choose
-**Nextleaf 0.1.0 — Installation revision 2**, and expand **Assets**. Select
+**Nextleaf 0.1.0 — Installation revision 3**, and expand **Assets**. Select
 **Nextleaf for macOS — Apple Silicon (M-series) — DMG installer**.
-The downloaded file is named `Nextleaf_0.1.0_aarch64.dmg`. Source-code archives
+The downloaded file is named `Nextleaf-0.1.0-macOS-Apple-Silicon-r3.dmg`. Source-code archives
 are for developers and are not the installer.
 
-1. Download `Nextleaf_0.1.0_aarch64.dmg` and `SHA256SUMS` from the release.
+1. Download `Nextleaf-0.1.0-macOS-Apple-Silicon-r3.dmg` and `SHA256SUMS` from the release.
    In Terminal, run `shasum -a 256` on the downloaded DMG and compare its full
    hash with that file's entry in `SHA256SUMS`.
 2. Open the DMG, drag `Nextleaf.app` into **Applications**, and eject the DMG.
-3. Open Nextleaf from Applications. For this unsigned test build, macOS may block
+3. Open Nextleaf from Applications. For this ad-hoc-signed test build, macOS may block
    the first launch. After attempting to open it, use **System Settings → Privacy
    & Security → Open Anyway** for Nextleaf and confirm. Only approve the package
    you downloaded from this repository and verified. Do not disable Gatekeeper.
@@ -165,6 +165,11 @@ are for developers and are not the installer.
 5. Wait for **Synced** / **Changes are synced.** The browser's test task must appear.
 6. Create another task on the Mac. Reload the browser and check that it appears.
    Quit and reopen the installed Mac app to confirm local persistence.
+
+If an earlier `Nextleaf_0.1.0_aarch64.dmg` reports that the app is damaged, cancel
+that launch and use the revision 3 installer instead. The original files had an
+incomplete bundle signature despite matching their download checksums. Do not
+remove quarantine attributes or disable Gatekeeper to hide this packaging defect.
 
 For the offline test, disconnect Tailscale on the Mac, edit a test task, and
 restart Nextleaf. The local edit must remain. Reconnect Tailscale, then verify

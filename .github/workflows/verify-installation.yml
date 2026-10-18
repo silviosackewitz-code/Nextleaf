@@ -19,7 +19,7 @@ jobs:
         run: |
           mkdir release-check
           cd release-check
-          BASE=https://github.com/silviosackewitz-code/Nextleaf/releases/download/install-v0.1.0-r2
+          BASE=https://github.com/silviosackewitz-code/Nextleaf/releases/download/install-v0.1.0-r3
           wget --https-only "$BASE/docker-compose.yml" "$BASE/example.env" "$BASE/SHA256SUMS"
           sha256sum --check --ignore-missing SHA256SUMS
           cmp docker-compose.yml ../deploy/release/docker-compose.yml

@@ -4,6 +4,19 @@ Consolidated English record. Later decisions supersede earlier ones where stated
 Git history retains the original development notes. Dates are decision dates,
 not promises that every target platform was tested.
 
+## 2026-10-18: repair the Mac bundle signature
+
+The owner's browser-downloaded DMG reported that Nextleaf was damaged. Both local
+download hashes matched the published artifact. Strict bundle verification failed
+with "code has no resources but signature indicates they must be present": only
+the linker-generated executable signature existed, with no sealed bundle resources.
+The previous release checks missed this defect. Configure Tauri ad-hoc signing
+for the complete bundle and publish installation revision 3 with a clearly named
+macOS Apple Silicon DMG. Keep earlier artifacts for traceability but mark their
+Mac installers superseded. Preserve server image, data, and installed configuration.
+Verify the final mounted DMG's bundle signature before release. This does not
+supply an Apple identity or notarization, or replace real downloaded-GUI testing.
+
 ## 2026-10-18: visible installation and download guidance
 
 The owner could not identify the Mac installer or find Linux installation commands

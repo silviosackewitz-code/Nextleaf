@@ -17,7 +17,7 @@ Nextleaf is open source under the **GNU GPL v3.0**.
 
 Start with the Linux server, then install the Mac app, then open Nextleaf on iPhone.
 The commands below are for a **fresh installation** of application 0.1.0 with
-installation files revision 2. The release is an **installation-test prerelease**.
+installation files revision 3. The release is an **installation-test prerelease**.
 For removal, updates, backups, and detailed verification, use the
 [complete installation guide](docs/INSTALLATION.md).
 
@@ -32,11 +32,11 @@ Run each block on your server, in order. Stop if any command fails.
 **Download and verify the installation files:**
 
 ```bash
-mkdir -p ~/nextleaf-install-0.1.0-r2 &&
-cd ~/nextleaf-install-0.1.0-r2 &&
-wget --https-only -O docker-compose.yml https://github.com/silviosackewitz-code/Nextleaf/releases/download/install-v0.1.0-r2/docker-compose.yml &&
-wget --https-only -O example.env https://github.com/silviosackewitz-code/Nextleaf/releases/download/install-v0.1.0-r2/example.env &&
-wget --https-only -O SHA256SUMS https://github.com/silviosackewitz-code/Nextleaf/releases/download/install-v0.1.0-r2/SHA256SUMS &&
+mkdir -p ~/nextleaf-install-0.1.0-r3 &&
+cd ~/nextleaf-install-0.1.0-r3 &&
+wget --https-only -O docker-compose.yml https://github.com/silviosackewitz-code/Nextleaf/releases/download/install-v0.1.0-r3/docker-compose.yml &&
+wget --https-only -O example.env https://github.com/silviosackewitz-code/Nextleaf/releases/download/install-v0.1.0-r3/example.env &&
+wget --https-only -O SHA256SUMS https://github.com/silviosackewitz-code/Nextleaf/releases/download/install-v0.1.0-r3/SHA256SUMS &&
 sha256sum --check --ignore-missing SHA256SUMS
 ```
 
@@ -45,7 +45,7 @@ Continue only when both `docker-compose.yml` and `example.env` report **OK**.
 **Create the configuration and empty data directories:**
 
 ```bash
-cd ~/nextleaf-install-0.1.0-r2 &&
+cd ~/nextleaf-install-0.1.0-r3 &&
 sudo install -d -m 0750 /opt/nextleaf-app &&
 sudo install -m 0640 docker-compose.yml /opt/nextleaf-app/docker-compose.yml &&
 sudo install -m 0600 example.env /opt/nextleaf-app/.env &&
@@ -104,15 +104,14 @@ Mac synchronization do not depend on it.
 ### 2. Mac: download the macOS installer
 
 **Choose “Nextleaf for macOS — Apple Silicon (M-series) — DMG installer” under
-Releases → Nextleaf 0.1.0 — Installation revision 2 → Assets.**
+Releases → Nextleaf 0.1.0 — Installation revision 3 → Assets.**
 
-The downloaded filename is `Nextleaf_0.1.0_aarch64.dmg`. **This is a Mac installer**:
-`aarch64` is the technical name for the processor architecture used by Apple
-Silicon Macs. It does not mean Linux.
+The downloaded filename is `Nextleaf-0.1.0-macOS-Apple-Silicon-r3.dmg`.
+It is for **macOS on Apple Silicon (M-series)**.
 
 | Your Mac, shown under Apple menu → About This Mac | Download |
 | --- | --- |
-| **Chip: Apple M…** (Apple Silicon / M-series) | `Nextleaf_0.1.0_aarch64.dmg` |
+| **Chip: Apple M…** (Apple Silicon / M-series) | `Nextleaf-0.1.0-macOS-Apple-Silicon-r3.dmg` |
 | **Processor: Intel…** | No compatible installer in this release |
 
 On this repository's **Code** page, find **Releases** in the sidebar, open the
@@ -124,7 +123,9 @@ Verify the DMG against the release's `SHA256SUMS`, open it, drag **Nextleaf** in
 **Applications**, and eject the disk image. Open the installed app and enter your
 private server address under **Settings → Local data and sync → Connect and sync**.
 
-The Mac package is a test build **without Apple Developer ID signing or notarization**.
+Revision 3 fixes an incomplete app-bundle signature in the earlier Mac installers.
+The bundle now has a complete ad-hoc test signature. It remains **without Apple
+Developer ID signing or notarization**.
 If macOS blocks the first launch, follow the [Mac installation steps](docs/INSTALLATION.md#5-install-the-native-mac-app).
 Do not disable Gatekeeper globally.
 
@@ -167,7 +168,7 @@ offline phone editing, and automatic desktop updates are not part of this releas
 | `/srv/nextleaf/` | Persistent SQLite task database | Consistent copy of the entire folder |
 
 The [installation guide](docs/INSTALLATION.md) sets these paths explicitly for
-release 0.1.0, installation revision 2. The environment template already contains
+release 0.1.0, installation revision 3. The environment template already contains
 these defaults. Docker images can be downloaded again. See the
 [backup instructions](docs/DEPLOYMENT.md#consistent-backup-and-restore) before
 copying a running database. For a clean restart, follow the

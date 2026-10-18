@@ -126,7 +126,10 @@ Compose startup/API/MCP/container recreation, publishes platform tags, then comb
 them into a versioned multiarchitecture image. Public package visibility must also
 be verified; a public source repository alone does not make a new GHCR package public.
 Mac builds use Tauri and include GPL and third-party notices in app resources.
-The first Apple Silicon DMG is intentionally unsigned/unnotarized as approved.
+Installation revision 3 sets `bundle.macOS.signingIdentity` to `-` so Tauri signs
+the complete app bundle ad hoc. Earlier DMGs only had a linker-signed executable
+and failed strict bundle verification. Developer ID and notarization remain absent;
+ad-hoc integrity verification is not proof of Gatekeeper acceptance.
 
 ## Future boundaries
 

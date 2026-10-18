@@ -131,3 +131,18 @@ notarization. Bundle LICENSE and THIRD_PARTY_NOTICES in the application and serv
 Release the corresponding tagged source, Compose files, and SHA256SUMS alongside
 the DMG. Confirm anonymous downloads and public GHCR access independently of an
 authenticated build job. See NEXT_STEPS for actual outcomes and pending tests.
+
+## Mac package signature gate
+
+For the test release, Tauri uses `bundle.macOS.signingIdentity: "-"` to ad-hoc sign
+the entire bundle. Before publishing any DMG, mount it read-only and run:
+
+```bash
+codesign --verify --deep --strict --verbose=2 /Volumes/Nextleaf/Nextleaf.app
+```
+
+Use the actual mounted volume path. A checksum and a successful executable launch
+are insufficient: the original DMG passed those checks but lacked a valid bundle
+resource seal. Verify the app from the final DMG, not only the build directory.
+Developer ID and notarization are separate release requirements. Keep quarantine
+and Gatekeeper intact during the owner's downloaded-installer acceptance test.

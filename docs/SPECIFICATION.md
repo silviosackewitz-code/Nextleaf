@@ -169,8 +169,9 @@ Use versioned, public release downloads with checksums and prebuilt images.
 The first server install uses wget, `.env`, and Docker Compose without compiling.
 Mac users install a DMG; Windows Setup EXE and Linux AppImage/DEB are later targets.
 Updates initially install a new version and preserve local data; no integrated
-updater is required yet. The owner approved an unsigned Mac test build because
-no Apple Developer membership is available. Do not label it signed/notarized.
+updater is required yet. The owner approved a Mac test build without Apple Developer ID because no
+Apple Developer membership is available. Provide a valid ad-hoc bundle signature
+for package integrity; do not describe this as Apple-verified or notarized.
 
 After preparation, the owner will remove test installations on Pi, Mac, and iPhone
 and run the documented installation from empty data, server first. Existing tasks
