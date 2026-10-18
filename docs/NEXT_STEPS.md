@@ -16,7 +16,14 @@ integrity and strict deep bundle verification, including a sealed resource manif
 The mounted app passed isolated local MCP startup, 13-tool enumeration, tag edits,
 and restart persistence with SQLite integrity. TypeScript/Vite and the Tauri release
 build passed. Downloaded GUI launch with quarantine intact remains an owner check.
-The Pi remains healthy and no server reinstall is needed.
+Revision 3 is published at `install-v0.1.0-r3` with eight assets. All seven payload
+files were anonymously downloaded and matched the published checksums. The DMG is
+`Nextleaf-0.1.0-macOS-Apple-Silicon-r3.dmg` with SHA-256
+`37967a18a32007d5289c50f6de8eec0be1bc6cf38b8e77973e500f1f529ad8ac`.
+Earlier release pages and Mac asset labels now identify the superseded installer.
+Compose/environment files and server image are unchanged, so server runtime tests
+were not repeated; new download hashes were verified. The Pi remains healthy and
+no server reinstall is needed.
 
 ## Current milestone
 
