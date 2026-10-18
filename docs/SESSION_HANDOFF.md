@@ -29,8 +29,9 @@ retains tag IDs, People kinds, archives, and field-level conflict behavior.
 The owner confirmed Mac data-folder deletion and iPhone cleanup, then installed
 the public 0.1.0 image with the new layout. Screenshot evidence shows a healthy
 container, expected API capabilities, and private HTTPS forwarding. The next user
-step is to create an Installation check task in the browser and reload, followed
-by the fresh Mac installation and iPhone web setup.
+step is to confirm the already-created browser test task survives reloading,
+then complete the fresh Mac installation and iPhone web setup. Revision 2 public
+installation checks passed on both architectures; evidence is in NEXT_STEPS.
 
 Configuration belongs in `/opt/nextleaf-app/`; persistent data is `/srv/nextleaf/`.
 Back up both consistently. Installation revision 2 (`install-v0.1.0-r2`) updates

@@ -24,6 +24,20 @@ agreed paths directly; no post-download path correction is needed. It reuses the
 same 0.1.0 image and DMG. The original release remains available. README now explains
 the GTD workflow, device requirements, private hosting, limitations, and feedback.
 
+## Installation revision 2 verification
+
+[Revision 2](https://github.com/silviosackewitz-code/Nextleaf/releases/tag/install-v0.1.0-r2)
+is published with eight assets. All seven payload files were anonymously downloaded
+and matched the new SHA256SUMS. The Mac DMG matches the original release byte for
+byte; application source remains unchanged. Revised Compose fallback was evaluated
+on the Pi without changing the running service and resolved to `/srv/nextleaf`.
+
+[Public installation checks](https://github.com/silviosackewitz-code/Nextleaf/actions/runs/39156831309)
+passed on ARM64 and AMD64: downloads, checksums, exact template match, standard data
+path, unauthenticated image pull, fresh install, API/MCP, and recreation persistence.
+The first new check failed because one Compose version omits false-valued JSON
+fields; the assertion was corrected. No release or application defect was found.
+
 ## Release verification
 
 [Release 0.1.0](https://github.com/silviosackewitz-code/Nextleaf/releases/tag/v0.1.0)
