@@ -4,6 +4,38 @@ Updated: 2026-10-18. Historical duplicate status notes have been consolidated;
 requirements and reasons remain in SPECIFICATION and DECISIONS, with original
 history available in Git.
 
+## Completed owner-requested MCP import
+
+On 2026-10-18, the owner requested a complete fresh Nirvana import through local
+MCP. Read-only retrieval returned 130 objects (119 tasks, 11 projects), 3 Areas,
+and 13 context tags. Separate Logbook/Trash ID reads matched the full snapshot.
+The owner explicitly selected Personal for the two tasks with multiple Areas;
+the untouched original records remain in the private import receipts.
+
+A separate database test imported all 130 records, compared supported fields and
+relations, and confirmed that repeating the input skipped all 130 without changes.
+The same local stdio MCP tool then imported into the desktop database after a
+consistent backup. The existing test task was preserved. Final totals are 120
+tasks, 11 projects, 3 Areas, and 13 tags. SQLite integrity and foreign-key checks
+passed. The repeated live import inserted zero records and skipped all 130.
+A complete field-and-association comparison of the private Pi sync snapshot with
+the local database passed after background synchronization. Nirvana was unchanged.
+The refreshed iPhone screen was not independently inspected after import.
+
+Current source exposes the shared importer as `import_nirvana` (14 MCP tools).
+The release-mode desktop executable built successfully. All 30 backend tests,
+including local HTTP sync, passed; the subsequently added incompatible-metadata
+rollback test also passed. The initial real-data test correctly rejected ambiguous
+Areas without partial writes. Private source snapshots, backups, and verification
+receipts are outside the repository and must never be published.
+
+The installed revision-3 app and 0.1.0 container are unchanged and still expose
+13 tools. Import used a current local development executable sharing the desktop
+database; no new installer or container release was published. Third-party client
+registration remains separate. Recurring source templates retain their status but
+cannot generate occurrences without a complete source rule. Import receipts remain
+local-only; preserve the importing desktop database for safe retries.
+
 ## Resolved Mac installer defect
 
 The owner's browser-downloaded Mac installer reported "damaged". Both downloaded

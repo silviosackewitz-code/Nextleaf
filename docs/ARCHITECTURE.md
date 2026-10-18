@@ -20,7 +20,11 @@ router through Tower inside the process; desktop requires neither a local HTTP
 port nor a separate backend sidecar. React chooses Tauri IPC on desktop and HTTP
 in the browser. Validation and Sequential availability remain shared.
 
-Both MCP transports use the official `rmcp` SDK and the same 13 operations.
+Both MCP transports use the official `rmcp` SDK and the same 13 editing/query
+operations plus `import_nirvana` in current source builds. The import tool and CLI
+share `backend/src/nirvana.rs`; validation and writes run in one immediate
+transaction. Import receipts/raw source records remain local and are not included
+in the sync protocol. The published 0.1.0 binaries predate this additional tool.
 Server `/mcp` requires a Bearer token and allowed host, rejects browser Origin,
 and returns 503 when unconfigured. Desktop `--mcp` opens the same local database
 and starts the same background sync. It exposes domain data, not general OS

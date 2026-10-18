@@ -17,8 +17,9 @@ does not push live updates into every visible client.
 | Tags and People | `list_tags`, `create_tag`, `update_tag` |
 | Projects | `list_projects`, `create_project`, `update_project` |
 | Tasks | `list_tasks`, `get_task`, `create_task`, `update_task` |
+| Import | `import_nirvana` (development builds after installation revision 3) |
 
-These 13 tools cover implemented data operations: project mode/state/Focus/tags/
+The 13 editing/query tools cover implemented data operations: project mode/state/Focus/tags/
 due date, task fields and assignments, completion/reopening/trash, and Area/tag
 archive and restoration. `all` excludes completed and trash tasks; request those
 states separately for a complete inventory. Completing a project does not complete
@@ -44,6 +45,25 @@ Update server before clients; incompatible protocol requests fail without mutati
 Perspectives, Review, and manual reordering are not completed features. Add shared
 MCP coverage when those features are implemented. Client-specific display and
 connection settings are not controlled by the central MCP server.
+
+## One-time Nirvana import
+
+Current source builds also expose `import_nirvana`, reusing the CLI importer in
+`backend/src/nirvana.rs`. Pass a complete `nirvana-mcp-v1` snapshot as the tool
+arguments: `format`, `total`, `has_more`, `tags`, and `items`. Read every source
+page with notes included and verify completeness before constructing this envelope.
+Take a consistent database backup first. The tool does not fetch from Nirvana.
+
+The importer preserves supported fields, completed/trash history, project tags,
+and inert recurring templates in one transaction. Identical records are skipped;
+changed source records are rejected to protect local edits. Existing archived or
+incompatible tag names require resolution before import. See
+[Nirvana import](NIRVANA_IMPORT.md) for mapping and limits.
+
+The published 0.1.0 server image and revision-3 DMG still expose 13 tools; this
+additional tool requires a new source build. Using a local development executable
+with `--mcp` can import into the same desktop database without replacing the app.
+The existing app and Pi can display and synchronize those imported records.
 
 ## Server authentication
 
@@ -93,7 +113,7 @@ python3 deploy/check_mcp.py --env-file /opt/nextleaf-app/.env
 ```
 
 With permission to read the secret file, this checks local HTTP authentication,
-rejection without a token, initialization, all 13 tool names, and a read-only Area
+rejection without a token, initialization, the 13 base tool names (plus the optional import tool in newer builds), and a read-only Area
 call. It prints neither the secret nor task contents and makes no data changes.
 Alternatively supply the token via environment and select an endpoint with `--url`.
 Redirects are not followed. Isolated protocol/domain tests and the release container

@@ -1,4 +1,5 @@
 mod mcp;
+pub mod nirvana;
 
 use axum::{
     extract::{Path, Query, State},

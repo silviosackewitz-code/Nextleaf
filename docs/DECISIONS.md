@@ -187,3 +187,19 @@ small steps, inspired by old OmniFocus iPad workflows. Research is not an instru
 to implement it now. Perspective filters and Review dates/intervals/resume behavior
 need a dedicated specification round. Mobile, offline desktop, MCP, and installation
 have priority.
+
+## 2026-10-18: complete fresh-install import through local MCP
+
+The owner explicitly requested all Nirvana tasks in Nextleaf through MCP after
+confirming fresh installation on Mac, Pi, and iPhone. Read Nirvana only. Preserve
+existing Nextleaf records and include projects, completed/trash history, notes,
+and metadata. Reuse the existing transactional importer through a new MCP tool
+because ordinary task creation cannot retain historical dates or recurring
+source templates. Keep project mode Parallel as previously chosen. This is a
+one-time transfer, not ongoing Nirvana synchronization. Local import receipts and
+raw source data must remain private and be backed up with the desktop database.
+
+The owner subsequently selected Personal for both source tasks with multiple
+Areas. Keep each untouched source object in the private prepared record under
+`original_source`, while mapping the task to the explicitly selected Area. The
+successful live import and Pi synchronization are recorded in NEXT_STEPS.

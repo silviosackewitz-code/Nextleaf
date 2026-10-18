@@ -1,9 +1,53 @@
 # One-time Nirvana import
 
-Historical import: 2026-10-17. This is not ongoing synchronization and is not part
-of the new empty-installation test. The original Nirvana account was not modified.
+Imports are one-time transfers, not ongoing synchronization. The original
+Nirvana account is read-only. A fresh installation starts empty; import is a
+separate owner-requested action.
 
-## Retrieved data
+## Current MCP workflow
+
+Current source builds expose `import_nirvana` through both MCP transports. The
+published 0.1.0 server and revision-3 Mac installer predate this tool. For local
+imports, start a current desktop build with `--mcp`; it uses the existing desktop
+database and saved Pi connection. No server MCP token is needed.
+
+Read all source pages with notes, plus tag/Area metadata. Construct the complete
+`nirvana-mcp-v1` envelope described below, back up the target database consistently,
+and call `import_nirvana` with that envelope as the arguments. Verify fields and
+counts through MCP and check server synchronization. Keep the original snapshot,
+backup, and receipt private.
+
+Nextleaf supports one Area per item. If Nirvana returns several, obtain an
+explicit mapping before import. A prepared record may retain its untouched
+source under `original_source` while its `tags` contains the selected Area and
+all context tags. The raw prepared record, including that original object, is
+stored in `nirvana_imports`; never silently discard an ambiguous assignment.
+
+## Verified fresh-install import: 2026-10-18
+
+The owner requested all current source records through local MCP. Retrieval was
+complete (`total=130`, `has_more=false`) and included notes. Separate Logbook and
+Trash queries cross-checked 20 and 15 source IDs. Two tasks had multiple Areas;
+the owner explicitly selected Personal for both, with original records preserved
+under `original_source` in the prepared import records.
+
+- 119 tasks: 19 Next, 50 Later, 4 Waiting, 1 Scheduled, 1 Recurring, 8 Someday,
+  1 Inbox, 20 Completed, and 15 Trash.
+- 11 projects, including 3 completed projects, all using Parallel mode.
+- 3 Areas and 13 context tags; context tags were not inferred to be People.
+- The existing Nextleaf task was preserved: final total 120 tasks.
+
+The isolated and live imports both inserted 130 records. Each second call skipped
+all 130 and changed nothing. Supported task/project fields and relations matched
+the prepared source; raw original records were retained. Integrity and foreign-key
+checks passed. After background sync, all persistent fields and tag associations
+matched between desktop and Pi. No source-side mutations occurred. Private input,
+backup, and verification artifacts are outside the repository. The installed app
+and Pi image were not replaced; import used a source-built local MCP executable.
+
+## Historical import: 2026-10-17
+
+### Retrieved data
 
 The official `https://mcp.nirvanahq.com/mcp` connector returned all 128 objects with
 `get_tasks`, all states, notes included, limit 200, `has_more=false`. Separate
@@ -23,7 +67,7 @@ not available, so preserve retrieval order. Keep date-only values as `YYYY-MM-DD
 without inventing a time. Local `updated_at` reflects import time; source
 `last_modified_days` remains in the raw record.
 
-## Import implementation
+## Shared import implementation
 
 ```bash
 cargo run --locked --manifest-path backend/Cargo.toml --bin import_nirvana -- input.json target.db
@@ -35,7 +79,11 @@ rejects duplicate/unknown IDs, unsupported types, broken parents, and ambiguous
 Areas before a transaction can partly import data. `nirvana_imports` retains raw
 records and stable local UUID mappings. Reimporting identical records is a no-op;
 changed source records fail rather than overwriting intervening local edits.
-Tests cover idempotency, validation, mapping, and rollback.
+Tests cover idempotency, validation, mapping, project tags/due date/Focus,
+rollback, incompatible existing metadata, and import through the MCP transport.
+The CLI and MCP tool call the same importer. Import receipts are local-only and
+are not synchronized to the Pi: retain the importing desktop database for safe
+retries. Do not reimport into a different replica without those receipts.
 
 The private retrieval snapshot was stored at
 `data/imports/nirvana-mcp-2026-10-17.json`, and the pre-import backup under

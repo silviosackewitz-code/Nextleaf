@@ -51,10 +51,10 @@ try:
     assert initialized['serverInfo']['name'] == 'nextleaf', 'Unexpected server'
     tools = {tool['name'] for tool in rpc('tools/list', {})['tools']}
     expected = {'list_areas', 'create_area', 'list_tags', 'create_tag', 'update_tag', 'update_area', 'list_projects', 'create_project', 'update_project', 'list_tasks', 'get_task', 'create_task', 'update_task'}
-    assert tools == expected, 'Unexpected tool coverage'
+    assert expected <= tools <= expected | {'import_nirvana'}, 'Unexpected tool coverage'
     result = rpc('tools/call', {'name': 'list_areas', 'arguments': {}})
     assert not result.get('isError'), 'Read-only tool failed'
     assert isinstance(json.loads(result['content'][0]['text']), list)
 except (urllib.error.URLError, RuntimeError, AssertionError, KeyError, ValueError) as error:
     raise SystemExit(f'MCP check failed: {type(error).__name__}') from None
-print('NEXTLEAF_MCP_OK: authenticated transport, 13 tools, read-only call; unauthorized access rejected.')
+print(f'NEXTLEAF_MCP_OK: authenticated transport, {len(tools)} tools, read-only call; unauthorized access rejected.')

@@ -157,7 +157,9 @@ by adding an MCP endpoint. Client display/connection settings remain local.
 
 Nirvana import is one-time only, with all imported projects Parallel by explicit
 choice. Preserve source IDs, notes, dates, and raw source data; do not infer missing
-recurrence rules or create ongoing Nirvana sync. See [NIRVANA_IMPORT.md](NIRVANA_IMPORT.md).
+recurrence rules or create ongoing Nirvana sync. The owner requested a fresh
+complete import through local desktop MCP after confirming Mac/Pi sync and iPhone
+access. Preserve existing Nextleaf entries and make identical retries a no-op. See [NIRVANA_IMPORT.md](NIRVANA_IMPORT.md).
 
 ## Distribution and acceptance
 

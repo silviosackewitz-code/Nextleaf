@@ -16,6 +16,26 @@ Installation revision 3 contains the repaired ad-hoc-signed Mac DMG. Detailed
 remaining acceptance checks are in NEXT_STEPS. Test tasks remain disposable.
 No Apple Developer membership/certificate is available; do not claim notarization.
 
+## Completed MCP import
+
+The owner requested all Nirvana tasks/projects through local MCP and selected
+Personal for both ambiguous multi-Area tasks. The shared importer is now exposed
+in current source as `import_nirvana`. A separate database run verified complete
+mapping and repeat safety before live import through stdio. The original source
+objects and explicit mapping are retained privately, with a pre-import backup.
+
+Imported 119 tasks, 11 projects, 3 Areas, and 13 tags. The existing test task remains,
+so Nextleaf now has 120 tasks total. Repeating the prepared snapshot inserted zero
+records and skipped all 130. Every persistent entity field and tag association
+matched between desktop and Pi after background sync. Nirvana was not modified.
+No post-import iPhone screen inspection or third-party client registration occurred.
+
+Existing public binaries still expose 13 tools; the development executable used
+for import exposes 14 and shares the local desktop DB. No new installer/image was
+published. Preserve the working installation and local-only import receipts. Do
+not reimport into a separate replica without those receipts. See NEXT_STEPS for
+verification and NIRVANA_IMPORT for mapping/recurrence limitations.
+
 ## Resolved Mac packaging correction
 
 The owner reached a "damaged" alert with the downloaded Mac DMG. Hashes matched,
@@ -63,8 +83,8 @@ server. Do not replace its `.env`, reset its data, or configure backup schedules
 ## Documentation map
 
 INSTALLATION covers first use and owner-performed reset; DEPLOYMENT covers normal
-updates/backup and prior Pi stages. MCP documents all 13 tools and client limits.
-NIRVANA_IMPORT records the historical one-time import. UX_REFERENCE, REVIEW_RESEARCH,
+updates/backup and prior Pi stages. MCP documents the 13 release tools, the additional development import tool, and client limits.
+NIRVANA_IMPORT records the historical import and current one-time MCP workflow. UX_REFERENCE, REVIEW_RESEARCH,
 and NAMING distinguish observations from accepted requirements and future choices.
 
 The checkout folder was renamed successfully. The Codex saved-project entry still
