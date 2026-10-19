@@ -4,7 +4,7 @@ Updated: 2026-10-18. Historical duplicate status notes have been consolidated;
 requirements and reasons remain in SPECIFICATION and DECISIONS, with original
 history available in Git.
 
-## Scheduling and Contacts update 0.1.1 — published, owner update pending
+## Scheduling and Contacts update 0.1.1 — owner update and sync accepted
 
 The owner explicitly requested both Start Date and Make Repeating through State →
 Scheduled, no More options disclosure, Waiting contact choices, and travel-aware
@@ -30,9 +30,17 @@ match the published checksum file.
 
 Verification runs: [containers and update](https://github.com/silviosackewitz-code/Nextleaf/actions/runs/39176317896)
 and [public installation](https://github.com/silviosackewitz-code/Nextleaf/actions/runs/39176765491).
-The earlier Contacts-only DMG is superseded. Actual owner update acceptance remains.
-Installed Mac and Pi still run 0.1.0. All real data remains untouched by the new
-scheduling tests, which use isolated databases.
+The earlier Contacts-only DMG is superseded. The owner completed the in-place
+update on 2026-10-18 after a stopped-service Pi backup and a consistent local
+desktop backup. The updated private server reports healthy with sync-v3 and
+scheduling. The installed Mac bundle is 0.1.1, its sync baseline uses protocol 3,
+and the Pi snapshot matches that baseline for all 120 tasks, 11 projects, 3 Areas
+and 13 tags at the verification point; no sync errors or conflicts were present.
+The owner then confirmed the practical test: creating a task on the Mac appeared
+on the iPhone, and renaming it on the iPhone returned to the Mac. Basic update
+and bidirectional synchronization acceptance passed. Start Date and Make
+Repeating acceptance on the owner's devices remains pending; timezone travel and
+a full disaster-recovery exercise have not been tested on those devices.
 
 ## Completed owner-requested MCP import
 
@@ -59,7 +67,7 @@ rollback test also passed. The initial real-data test correctly rejected ambiguo
 Areas without partial writes. Private source snapshots, backups, and verification
 receipts are outside the repository and must never be published.
 
-The installed revision-3 app and 0.1.0 container are unchanged and still expose
+At the time of import, the installed revision-3 app and 0.1.0 container exposed
 13 tools. Import used a local development executable sharing the desktop
 database. No release was published at the time of import; 0.1.1 now includes
 that fourteenth tool as recorded above. Third-party client

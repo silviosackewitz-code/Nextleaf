@@ -16,7 +16,7 @@ Installation revision 3 contains the repaired ad-hoc-signed Mac DMG. Detailed
 remaining acceptance checks are in NEXT_STEPS. Test tasks remain disposable.
 No Apple Developer membership/certificate is available; do not claim notarization.
 
-## Scheduling and Contacts update 0.1.1 — published, owner update pending
+## Scheduling and Contacts update 0.1.1 — owner update and sync accepted
 
 The owner explicitly requested both Start Date and Make Repeating through State →
 Scheduled, no More options disclosure, Waiting contact choices, and travel-aware
@@ -42,9 +42,17 @@ match the published checksum file.
 
 Verification runs: [containers and update](https://github.com/silviosackewitz-code/Nextleaf/actions/runs/39176317896)
 and [public installation](https://github.com/silviosackewitz-code/Nextleaf/actions/runs/39176765491).
-The earlier Contacts-only DMG is superseded. Actual owner update acceptance remains.
-Installed Mac and Pi still run 0.1.0. All real data remains untouched by the new
-scheduling tests, which use isolated databases.
+The earlier Contacts-only DMG is superseded. The owner completed the in-place
+update on 2026-10-18 after a stopped-service Pi backup and a consistent local
+desktop backup. The updated private server reports healthy with sync-v3 and
+scheduling. The installed Mac bundle is 0.1.1, its sync baseline uses protocol 3,
+and the Pi snapshot matches that baseline for all 120 tasks, 11 projects, 3 Areas
+and 13 tags at the verification point; no sync errors or conflicts were present.
+The owner then confirmed the practical test: creating a task on the Mac appeared
+on the iPhone, and renaming it on the iPhone returned to the Mac. Basic update
+and bidirectional synchronization acceptance passed. Start Date and Make
+Repeating acceptance on the owner's devices remains pending; timezone travel and
+a full disaster-recovery exercise have not been tested on those devices.
 
 ## Completed MCP import
 
