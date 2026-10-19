@@ -22,9 +22,9 @@ Release [v0.1.2](https://github.com/silviosackewitz-code/Nextleaf/releases/tag/v
 is published with an Apple Silicon DMG, ARM64/AMD64 server images, matching source,
 Compose/environment files, license notices and checksums. The final mounted DMG
 passed image integrity and strict deep ad-hoc signature verification. Its MCP
-startup against an isolated copy of the existing 0.1.1 database preserved every
-table/field (including migration history and import receipts), relations, client/
-server identities and baseline, with SQLite integrity and foreign keys valid.
+startup against an isolated copy of the existing 0.1.1 database preserved all
+entity rows, migration history, import receipts and relations, plus client/server
+identities and baseline, with SQLite integrity and foreign keys valid.
 
 Both native Linux builds passed Rust tests, fresh Compose/API/MCP checks, repeat
 generation, recreation persistence, and a container update from published 0.1.1.
