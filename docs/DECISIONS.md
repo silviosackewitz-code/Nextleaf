@@ -249,3 +249,62 @@ asked for a calmer, more spacious list, supplying a Nirvana reference. Keep the
 existing light palette, reserve the Focus column, put a small note icon beside the
 title, and use plain desktop metadata tags with more row spacing. Preserve phone
 touch targets and form tag chips; no theme or drag-and-drop feature is implied.
+
+## 2026-10-18: owner-authorized replacement from Nirvana master
+
+After verifying the 0.1.2 Mac/Pi update, the owner explicitly authorized deleting
+the Nextleaf task database and replacing its contents with everything currently
+in Nirvana. This supersedes preservation of Nextleaf-only test entries for this
+one operation. Keep Nirvana read-only and reuse the transactional MCP importer.
+Retain the previous explicit Personal choices for the same two multi-Area tasks,
+all project modes as Parallel, and the two previously selected Contacts.
+
+Sync deliberately rejects removed records and never applies snapshot deletions.
+Therefore stage and verify the complete replacement before stopping clients,
+back up both replicas and Pi configuration consistently, and replace both
+replicas together. Preserve the server identity and URL binding; reset the old
+baseline and retry receipts so old records cannot return. This is an explicitly
+authorized reset, not a normal sync-conflict resolution strategy. Local import
+receipts and raw snapshots stay private. Do not invent missing recurrence rules
+or configure ongoing Nirvana synchronization. See NEXT_STEPS for actual results.
+
+
+## 2026-10-19: verified Inbox review and bounded repeat catch-up
+
+The owner asked to verify and repair the Inbox review, then explicitly chose to
+retain **all** missed repeats with confirmation before large backlogs. Use 100
+missing copies as the threshold and batch size. Pause visibly before a larger
+backlog starts; the Repeat dialog shows its count and requires approval through a
+specific calendar date. Do not switch to latest-only catch-up. Keep the existing
+calendar scan with a documented limit instead of adding a distributed cursor.
+Preserve cycle identities through edits and Stop Repeating in a small synchronized ledger, including stopped templates on fresh clients.
+
+Protocol 4 carries the approval field and prevents old peers from ignoring it.
+Upgrade the server first, then desktops; preserve baselines, unsent edits and raw
+Nirvana receipts. Scheduling/assignment fields merge as groups, with individual
+conflict choices. HTTP 4xx rejections rebuild from current data, except retryable
+408/429; network/5xx failures retain the frozen request. Cap receipts rather than
+silently evicting retry protection. SHA-256 uses the already locked sha2 crate.
+
+Completion/trash retain dates and repeat rules. Explicit ordinary state changes
+stop repeating. Canonical date writes, shared scheduling-state rules and inherited
+project Areas apply to REST/MCP/sync/import. Normalize legacy dates in the saved
+clock zone and keep their originals; retain cleared direct Areas in an audit table.
+Identical Nirvana retries return before processing renamed/reclassified metadata.
+
+Editor drafts belong to App; layout changes and disappearing rows must not erase
+unsaved work. Rebase unchanged fields, and let users resolve changed fields.
+Disconnect suspends sync without abandoning the protected server binding.
+
+Host/Origin checks and CSP harden the private deployment without introducing an
+application login. Document least-privilege Tailscale access and mandatory identity
+rotation after a server restore. Automatic detection of a restore that preserves
+identity and Docker digest maintenance remain separate work. No release, live data
+migration or deployment is authorized by this source repair alone.
+
+## 2026-10-19 — Release 0.1.3 and owner installation
+
+The owner approved version 0.1.3, committing/pushing the repairs, publishing an
+update and installing it. Keep the existing installation-test prerelease status
+and Apple Silicon/ARM64/AMD64 artifacts. Back up both replicas, configure HTTP
+hosts, and upgrade the server before the desktop because sync moves to protocol 4.

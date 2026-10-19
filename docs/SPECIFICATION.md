@@ -78,7 +78,10 @@ The State property shows a left icon and one dropdown chevron. Scheduled dates
 use a compact English label such as `Scheduled: Oct 19, 2026`, on one line in the
 standard editor; long contact labels may truncate with the full value accessible.
 
-Dates retain `YYYY-MM-DD` precision without invented times. The shared month
+Dates retain canonical `YYYY-MM-DD` precision without invented times. New writes
+reject timestamps and noncanonical dates. Upgrade normalizes older accepted dates;
+timestamps use the saved scheduling zone (UTC if none was reported), and original
+values remain in a local audit table. The shared month
 calendar updates a form draft, or saves immediately from quick actions; support
 removing dates. Ordinary select fields remain accessible native controls.
 
@@ -101,7 +104,11 @@ Pause stops generation, Resume catches up missed dates, and Stop Repeating conve
 the template to a normal Next task. Existing copies are never deleted or recreated,
 including copies in Trash. Editing a cycle keeps its identity; already-created
 copies retain their content. A changed date may create a new future occurrence.
-Catch-up is bounded to 100 new tasks per pass. Supported dates start at 1900.
+Catch-up retains every missed date, in batches of at most 100 new tasks per pass.
+More than 100 missing copies require explicit confirmation before any are generated;
+the template pauses until its owner reviews the count in Edit/Resume Repeating.
+Approval is bounded to the displayed date. A later large backlog needs new approval.
+Supported dates span 1900–9999; scheduling cannot exceed the 50,000-record sync cap.
 
 Time zones follow travel: the foreground Mac/iPhone reports its system IANA time
 zone when opened, focused, or changed. The most recently active client wins and the
@@ -170,10 +177,13 @@ this decision does not authorize migrating other installed applications. See
 
 Desktop embeds the shared backend and stores locally. Bidirectional sync runs
 against the private server, with a baseline, stable identity, and explicit
-field-level conflict resolution. Preserve independent edits; do not silently
+field-level conflict resolution. Scheduling fields and Project/Area assignment
+are indivisible merge groups; users may resolve each conflict separately. Preserve independent edits; do not silently
 choose one whole database. Detect server identity/URL mismatches and reject
 incompatible protocols without changing data. Background sync runs every 15 seconds
-while UI or local MCP is running, only for the remote saved with that database.
+while UI or local MCP is running, only for the remote saved with that database, after a successful first exchange.
+Disconnect suspends automatic synchronization and enables standalone scheduling;
+reconnect retains the existing server binding and baseline.
 A fresh database must not inherit an old connection from browser UI storage.
 
 The iPhone web interface is online-only and uses the same application and GTD
@@ -200,7 +210,12 @@ Nirvana import is one-time only, with all imported projects Parallel by explicit
 choice. Preserve source IDs, notes, dates, and raw source data; do not infer missing
 recurrence rules or create ongoing Nirvana sync. The owner requested a fresh
 complete import through local desktop MCP after confirming Mac/Pi sync and iPhone
-access. Preserve existing Nextleaf entries and make identical retries a no-op. See [NIRVANA_IMPORT.md](NIRVANA_IMPORT.md).
+access. Normal imports preserve existing Nextleaf entries and make identical
+retries a no-op. On 2026-10-18, the owner separately authorized a complete
+one-time replacement using Nirvana as master, removing Nextleaf-only records
+after backup. This requires a coordinated Mac/Pi reset, retaining the server
+binding and the previously selected Contact classification. It does not enable
+ongoing Nirvana synchronization. See [NIRVANA_IMPORT.md](NIRVANA_IMPORT.md).
 
 ## Distribution and acceptance
 

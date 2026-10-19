@@ -38,7 +38,7 @@ assignments to archived records fail. Duplicate names are not silently merged.
 A contact rename updates exactly matching old Waiting-for text, preserving other
 free text. Old tags are not automatically reclassified as Contacts.
 
-Task REST/MCP payloads retain tag names for compatibility; sync protocol 3 uses
+Task REST/MCP payloads retain tag names for compatibility; sync protocol 4 uses
 stable IDs to preserve associations. Local v1 baselines migrate at startup.
 Update server before clients; incompatible protocol requests fail without mutation.
 
@@ -131,3 +131,19 @@ repeat rules. Import never infers rules missing from Nirvana.
 The foreground application reports its system timezone to `/api/schedule/timezone`.
 A headless standalone MCP database needs that initial timezone report before
 schedules run. Connected desktop MCP delegates execution to the Pi.
+
+
+## Scheduling and sync repair (protocol 4)
+
+Supply canonical `YYYY-MM-DD` dates (1900–9999), not timestamps. Setting a start
+date schedules the task; clearing it returns a Scheduled task to Next. Completion
+and Trash keep scheduling metadata for restore. Project tasks inherit their
+project's Area; direct task Area is cleared while assigned to a project.
+
+The backend retains repeat `id` across edits and Stop Repeating. More than 100
+missing occurrences pause generation. Only after the owner explicitly approves
+that backlog, set `catch_up_through` on the repeat rule to the approved calendar
+date and `paused: false`; do not infer approval from a request to resume or edit.
+The web/desktop Repeat dialog previews the count using POST /api/schedule/preview
+with `{template_id, rule}`. A later large backlog needs fresh approval. The shared
+backend still batches generation and enforces the snapshot record ceiling.

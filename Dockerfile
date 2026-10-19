@@ -4,7 +4,7 @@ WORKDIR /build/frontend
 COPY frontend/package.json frontend/package-lock.json ./
 RUN npm ci --no-audit --no-fund
 COPY frontend/ ./
-RUN npm run build
+RUN npm test && npm run build
 
 FROM rust:1.99.1-bookworm AS backend
 WORKDIR /build/backend

@@ -1061,7 +1061,7 @@ dependencies = [
 
 [[package]]
 name = "nextleaf-server"
-version = "0.1.2"
+version = "0.1.3"
 dependencies = [
  "axum",
  "chrono",
@@ -1071,6 +1071,7 @@ dependencies = [
  "rmcp",
  "serde",
  "serde_json",
+ "sha2",
  "sqlx",
  "subtle",
  "tokio",

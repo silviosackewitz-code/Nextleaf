@@ -1,17 +1,17 @@
 # Install Nextleaf: Raspberry Pi, Mac, and iPhone
 
-Version: **0.1.2 installation-test prerelease**. Install the server first, then the
+Version: **0.1.3 installation-test prerelease**. Install the server first, then the
 native Mac app, then the iPhone web interface. This walkthrough starts with empty
 data. It does not import the old test database or Nirvana data.
 
-[Release and downloads](https://github.com/silviosackewitz-code/Nextleaf/releases/tag/v0.1.2)
+[Release and downloads](https://github.com/silviosackewitz-code/Nextleaf/releases/tag/v0.1.3)
 
 | Component | Package |
 | --- | --- |
-| Linux server | `ghcr.io/silviosackewitz-code/nextleaf:0.1.2`, ARM64 and AMD64 |
-| Mac | `Nextleaf-0.1.2-macOS-Apple-Silicon.dmg`, Apple Silicon only |
+| Linux server | `ghcr.io/silviosackewitz-code/nextleaf:0.1.3`, ARM64 and AMD64 |
+| Mac | `Nextleaf-0.1.3-macOS-Apple-Silicon.dmg`, Apple Silicon only |
 | iPhone | Online web interface served by your Linux server |
-| Source | `Nextleaf-0.1.2-source.tar.gz`, GPL-3.0-only |
+| Source | `Nextleaf-0.1.3-source.tar.gz`, GPL-3.0-only |
 
 The Mac DMG is a test build without Apple Developer ID signing or notarization.
 Expect a macOS approval step. Intel Mac, Windows, and Linux desktop installers
@@ -30,7 +30,7 @@ Configuration and persistent data have separate, predictable locations:
 | Docker-managed storage | Downloaded images and disposable container layers | Not needed to restore Nextleaf |
 
 The container mounts `/srv/nextleaf` as `/data`. Its internal database path remains
-`/data/taskmanager.db`. Version 0.1.2 keeps the existing layout and sync protocol 3.
+`/data/taskmanager.db`. Version 0.1.3 keeps the existing layout and migrates to sync protocol 4.
 Update the server, then the Mac app, and reload the iPhone page.
 [Storage standard and backup scope](STORAGE.md) explains reuse for other applications.
 
@@ -61,9 +61,9 @@ The optional MCP token protects only MCP, not the web, REST, or sync endpoints.
 Use a new download directory. All files below belong to the same release:
 
 ```bash
-mkdir nextleaf-install-0.1.2
-cd nextleaf-install-0.1.2
-NEXTLEAF_RELEASE_BASE=https://github.com/silviosackewitz-code/Nextleaf/releases/download/v0.1.2
+mkdir nextleaf-install-0.1.3
+cd nextleaf-install-0.1.3
+NEXTLEAF_RELEASE_BASE=https://github.com/silviosackewitz-code/Nextleaf/releases/download/v0.1.3
 wget --https-only -O docker-compose.yml "$NEXTLEAF_RELEASE_BASE/docker-compose.yml"
 wget --https-only -O example.env "$NEXTLEAF_RELEASE_BASE/example.env"
 wget --https-only -O SHA256SUMS "$NEXTLEAF_RELEASE_BASE/SHA256SUMS"
@@ -83,17 +83,19 @@ sudo install -m 0640 docker-compose.yml /opt/nextleaf-app/docker-compose.yml
 sudo install -m 0600 example.env /opt/nextleaf-app/.env
 ```
 
-The template selects image `0.1.2` and `NEXTLEAF_DATA_DIR=/srv/nextleaf` directly.
-No path correction or manual environment edit is needed for this first installation.
+The template selects image `0.1.3` and `NEXTLEAF_DATA_DIR=/srv/nextleaf` directly.
+Before enabling private HTTPS, set `NEXTLEAF_HTTP_HOSTS` to your actual Tailscale
+hostname (without scheme, port, or path) in `/opt/nextleaf-app/.env`, then recreate
+the container. Loopback health checks remain available.
 `NEXTLEAF_MCP_TOKEN` is empty, so MCP starts disabled. Later integration is covered
 in [MCP.md](MCP.md). Use the exact private hostname in `NEXTLEAF_MCP_HOSTS` if enabling MCP.
 
-Version 0.1.2 refines task spacing, metadata alignment, note indicators, and the
-scheduled date control. It retains scheduling, Contacts, and the Nirvana MCP
+Version 0.1.3 repairs sync, repeat generation, draft preservation and date validation.
+All missed repeats remain available; generating more than 100 needs confirmation. It retains scheduling, Contacts, and the Nirvana MCP
 import tool introduced in 0.1.1. It retains the complete ad-hoc bundle signing introduced in
 revision 3. Apple Developer ID and notarization remain unavailable.
 Existing installations keep their `.env`, data, and server address; use
-[normal updates](DEPLOYMENT.md#update-from-011-to-012) instead of resetting.
+[normal updates](DEPLOYMENT.md#update-from-012-to-013) instead of resetting.
 
 Create the persistent data directory. Adjust the path if you changed it in `.env`:
 
@@ -117,7 +119,7 @@ curl --fail http://127.0.0.1:8787/api/health
 
 `pull` downloads the correct architecture; nothing is compiled on the Pi.
 Expect a healthy service and JSON containing `status: ok`, `tag-management`,
-and `sync-v3` and `scheduling`. If it fails, inspect logs before connecting clients:
+and `sync-v4` and `scheduling`. If it fails, inspect logs before connecting clients:
 
 ```bash
 sudo docker compose --env-file /opt/nextleaf-app/.env -f /opt/nextleaf-app/docker-compose.yml logs --tail 100
@@ -149,12 +151,12 @@ Apple menu → About This Mac, check whether it says **Chip: Apple M…** or
 **Processor: Intel…**. The `.dmg` file is the macOS installer.
 
 On the repository's Code page, open **Releases** in the sidebar, choose
-**Nextleaf 0.1.2 — UI refinements**, and expand **Assets**. Select
+**Nextleaf 0.1.3 — Reliability fixes**, and expand **Assets**. Select
 **Nextleaf for macOS — Apple Silicon (M-series) — DMG installer**.
-The downloaded file is named `Nextleaf-0.1.2-macOS-Apple-Silicon.dmg`. Source-code archives
+The downloaded file is named `Nextleaf-0.1.3-macOS-Apple-Silicon.dmg`. Source-code archives
 are for developers and are not the installer.
 
-1. Download `Nextleaf-0.1.2-macOS-Apple-Silicon.dmg` and `SHA256SUMS` from the release.
+1. Download `Nextleaf-0.1.3-macOS-Apple-Silicon.dmg` and `SHA256SUMS` from the release.
    In Terminal, run `shasum -a 256` on the downloaded DMG and compare its full
    hash with that file's entry in `SHA256SUMS`.
 2. Open the DMG, drag `Nextleaf.app` into **Applications**, and eject the DMG.
@@ -259,3 +261,10 @@ server first, and then install compatible desktop clients. See
 [DEPLOYMENT.md](DEPLOYMENT.md) and [verification status](NEXT_STEPS.md).
 The root `compose.yaml` is the historical local-build workflow; use
 `deploy/release/docker-compose.yml` and release assets for download installations.
+
+
+For version 0.1.3 and later, configure
+`NEXTLEAF_HTTP_HOSTS` with the actual Serve hostname before starting the new server.
+REST/sync have no login: private Tailscale reachability grants full data access.
+Replace broad default access with owner-specific grants and review node sharing.
+See [HTTP access, protocol 4 upgrades and safe restore](DEPLOYMENT.md#protocol-4-and-http-host-configuration).

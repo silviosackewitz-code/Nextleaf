@@ -17,3 +17,9 @@ Project knowledge belongs in the repository, not only in chat history.
   Distinguish implemented behavior, planned work, and unverified assumptions.
 - The current milestone is downloadable installation-test releases. Review and
   Perspectives need a separate specification round before implementation.
+
+## Owner deployment connection
+
+- The existing Raspberry Pi server SSH username is `dersack`. Use the owner's
+  configured Pi/Tailscale address; do not guess `silvio` or `silviosackewitz`.
+- Keep passwords, SSH keys and private host addresses out of this public repository.

@@ -23,6 +23,31 @@ source under `original_source` while its `tags` contains the selected Area and
 all context tags. The raw prepared record, including that original object, is
 stored in `nirvana_imports`; never silently discard an ambiguous assignment.
 
+## Verified owner-authorized master replacement: 2026-10-18
+
+After updating Mac and Pi to 0.1.2, the owner explicitly requested Nirvana as
+master and authorized replacing all Nextleaf task data. A complete, note-inclusive
+MCP read returned 136 records: 124 tasks and 12 projects. Separate Logbook and
+Trash reads matched the snapshot. The previous explicit Personal mapping was
+reused for the same two multi-Area tasks; originals remain in the private receipts.
+
+The installed app's shared MCP importer populated an isolated empty database.
+Every supported field and association matched the prepared source; identical
+retries inserted zero and skipped all 136. Fresh consistent backups preceded
+replacement on both devices. Normal sync cannot propagate physical deletion,
+so the replacement preserved server identity/URL but reset the previous baseline
+and server retry receipts. The owner ran the prepared stopped-service Pi exchange
+with sudo, including a full data/config backup and rollback on failure. The Mac
+was closed, backed up, replaced, and reopened after the Pi snapshot was verified.
+
+The resulting replicas contain 124 tasks, 12 projects, 3 Areas and 13 tags. The Mac
+retains all 136 raw import receipts. The two previously selected Contact kinds
+were restored through local MCP. Complete Mac/Pi field and tag-link comparison
+passed after sync without conflicts or errors. A subsequent tag archive and
+task-tag edit were also synchronized and preserved. Nirvana was unchanged.
+The one recurring source template has no executable rule supplied by MCP and
+remains inert. This was a one-time transfer, not ongoing Nirvana synchronization.
+
 ## Verified fresh-install import: 2026-10-18
 
 The owner requested all current source records through local MCP. Retrieval was
@@ -89,3 +114,11 @@ The private retrieval snapshot was stored at
 `data/imports/nirvana-mcp-2026-10-17.json`, and the pre-import backup under
 `data/backups/before-nirvana-live…db`. These ignored local files are not release
 assets or public repository content. Never commit personal task exports.
+
+
+The 2026-10-19 repair checks identical item receipts before touching Area/tag
+metadata, so exact retries remain a no-op after renames, archival or Contact
+conversion. Project tasks use their project's Area. Source dates remain in raw
+receipts; imported Next tasks with a start date become Scheduled, and undated
+Scheduled tasks become Next. This remains a one-time importer, not incremental
+Nirvana synchronization.

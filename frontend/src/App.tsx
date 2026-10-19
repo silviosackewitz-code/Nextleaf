@@ -1,13 +1,14 @@
+import { refreshEditor, type EditorState } from './editorState';
 import { FormEvent, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { api, Area, getApiBase, getStoredApiUrl, isDesktop, Project, Tag, Task, View } from './api';
 import DateField from './DateField';
 import ManageTags from './ManageTags';
 import ProjectDetails from './ProjectDetails';
 import DesktopConnection, { DesktopSyncIndicator } from './DesktopConnection';
-import { projectRows, projectExpected, type ProjectChanges } from './projectEdit';
+import { projectFields, projectRows, projectExpected, type ProjectChanges } from './projectEdit';
 import TaskDetails from './TaskDetails';
 import TaskActions from './TaskActions';
-import { taskExpected, type TaskChanges } from './taskEdit';
+import { editableFields, taskExpected, type TaskChanges } from './taskEdit';
 import Dialog from './Dialog';
 import useMobile from './useMobile';
 import { submenuPosition, timeOptions } from './quickMenu';
@@ -85,6 +86,10 @@ export default function App() {
   const [projectsExpanded, setProjectsExpanded] = useState(true);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const selectedTaskId = useRef<string | null>(null);
+  selectedTaskId.current = selectedTask?.id ?? null;
+  const [taskEditor, setTaskEditor] = useState<EditorState<Task> | null>(null);
+  const [projectEditor, setProjectEditor] = useState<EditorState<Project> | null>(null);
   const [editorDirty, setEditorDirty] = useState(false);
   const [showDiscard, setShowDiscard] = useState(false);
   const discardDecision = useRef<((discard: boolean) => void) | null>(null);
@@ -98,11 +103,12 @@ export default function App() {
   const reload = useCallback(async () => {
     const requestNumber = ++loadNumber.current;
     try {
-      const [a, p, t, completed, tags, badges] = await Promise.all([
+      const [a, p, t, completed, tags, badges, opened] = await Promise.all([
         api.areas(), api.projects(), projectId ? Promise.all([api.tasks('all', areaId || undefined, projectId), api.tasks('completed', areaId || undefined, projectId)]).then(([open, done]) => [...open, ...done].sort((a, b) => a.sort_order - b.sort_order)) : api.tasks(view === 'projects' ? 'all' : view, areaId || undefined),
         recentCompletions.current.size ? api.tasks('completed', areaId || undefined, projectId || undefined) : Promise.resolve([]),
         api.health().then(health => health.capabilities?.includes('item-creation') ? api.tags() : api.tasks('all').then(rows => [...new Set(rows.flatMap(task => task.tags))].sort().map(name => ({ id: name, name, kind: 'tag' as const, archived: false })))),
         Promise.all((['inbox', 'focus', 'waiting'] as const).map(target => api.tasks(target, areaId || undefined))),
+        selectedTaskId.current ? api.task(selectedTaskId.current) : Promise.resolve(null),
       ]);
       if (requestNumber !== loadNumber.current) return;
       for (const [id, entry] of recentCompletions.current) {
@@ -111,12 +117,19 @@ export default function App() {
         else recentCompletions.current.delete(id);
       }
       setAreas(a); setProjects(p); setTagRecords(tags);
+      setEditingProject(previous => previous ? p.find(project => project.id === previous.id) ?? previous : null);
       setNavigationTasks({ inbox: badges[0], focus: badges[1], waiting: badges[2] });
       setTasks(withRecentCompletions(t, recentCompletions.current.values()));
-      setSelectedTask(previous => previous ? [...t, ...completed].find(task => task.id === previous.id) ?? previous : null);
+      setSelectedTask(previous => previous ? (opened?.id === previous.id ? opened : [...t, ...completed].find(task => task.id === previous.id)) ?? previous : null);
       setError('');
     } catch (e) { if (requestNumber === loadNumber.current) setError(e instanceof Error ? e.message : String(e)); }
   }, [view, areaId, projectId]);
+  useEffect(() => {
+    if (selectedTask) setTaskEditor(previous => previous ? refreshEditor(previous, selectedTask, editableFields) : null);
+  }, [selectedTask]);
+  useEffect(() => {
+    if (editingProject) setProjectEditor(previous => previous ? refreshEditor(previous, editingProject, projectFields) : null);
+  }, [editingProject]);
   useEffect(() => {
     void api.reportTimezone().then(reload).catch(() => reload());
     let zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -155,7 +168,7 @@ export default function App() {
     setBusy(true);
     setError('');
     try { await callback(); await reload(); return true; }
-    catch (e) { setError(e instanceof Error ? e.message : String(e)); return false; }
+    catch (e) { await reload(); setError(e instanceof Error ? e.message : String(e)); return false; }
     finally { setBusy(false); }
   }
   function saveTask(task: Task, changes: TaskChanges, original = task) {
@@ -191,16 +204,16 @@ export default function App() {
   }
   async function openTask(task: Task) {
     if (!await canLeaveEditor()) return;
-    setEditorDirty(false); setError(''); setSelectedTask(task);
+    setEditorDirty(false); setError(''); setSelectedTask(task); setTaskEditor({ original: task, draft: task }); setEditingProject(null); setProjectEditor(null);
   }
   async function clearRecent() {
-    if (!await canLeaveEditor()) return false;
+    if (busy || !await canLeaveEditor()) return false;
     setEditorDirty(false);
     ++loadNumber.current;
     const completedIds = new Set(recentCompletions.current.keys());
     setTasks(previous => previous.filter(task => !completedIds.has(task.id)));
     recentCompletions.current.clear();
-    setSelectedTask(null); setEditingProject(null);
+    setSelectedTask(null); setEditingProject(null); setTaskEditor(null); setProjectEditor(null);
     return true;
   }
   async function changeFilters(changes: { tag?: TagFilter; person?: string; properties?: typeof emptyTaskFilters }) {
@@ -209,21 +222,22 @@ export default function App() {
     if (changes.person !== undefined) setPersonFilter(changes.person);
     if (changes.properties) setPropertyFilters(changes.properties);
     setExpandedGroups([]);
+    await reload();
   }
   async function changeView(next: View | 'projects') { if (!await clearRecent()) return; setView(next); setProjectId(''); setPersonFilter(''); setPropertyFilters(emptyTaskFilters); setExpandedGroups([]); setDrawerOpen(false); setShowSettings(false); }
   async function selectArea(id: string) { if (!await clearRecent()) return; setAreaId(id); setProjectId(''); }
   async function selectProject(id: string) { if (!await clearRecent()) return; if (view === 'projects') setTagFilter(null); setProjectId(id); setView('all'); setPersonFilter(''); setPropertyFilters(emptyTaskFilters); setExpandedGroups([]); setDrawerOpen(false); setShowSettings(false); }
   function closeTaskDetails(id: string) {
-    setEditorDirty(false); setSelectedTask(null);
+    setEditorDirty(false); setSelectedTask(null); setTaskEditor(null);
     requestAnimationFrame(() => document.getElementById(`task-title-${id}`)?.focus());
   }
   async function editProject(project: Project) {
     if (!await canLeaveEditor()) return;
-    setEditorDirty(false); setEditingProject(project); setSelectedTask(null); setError('');
+    setEditorDirty(false); setEditingProject(project); setProjectEditor({ original: project, draft: project }); setSelectedTask(null); setTaskEditor(null); setError('');
   }
   function closeProject() {
     const id = editingProject?.id;
-    setEditorDirty(false); setEditingProject(null);
+    setEditorDirty(false); setEditingProject(null); setProjectEditor(null);
     requestAnimationFrame(() => document.getElementById(`project-title-${id}`)?.focus());
   }
   function saveProject(changes: ProjectChanges, original = editingProject!) {
@@ -325,7 +339,7 @@ export default function App() {
           const rows = overview.filter(row => row.project.status === status);
           return rows.length > 0 && <section key={status} aria-label={`${status} projects`}><h2 className="taskgroupheading">{status === 'active' ? 'Active Projects' : status === 'someday' ? 'Someday' : 'Completed Projects'}</h2>
             {rows.map(({ project, count }) => <article key={project.id} className={`projectrow ${!mobile && editingProject?.id === project.id ? 'expanded' : ''}`} onKeyDown={async event => { if (event.key === 'Escape' && editingProject?.id === project.id) { event.stopPropagation(); event.preventDefault(); if (await canLeaveEditor()) closeProject(); } }}>
-              {!mobile && editingProject?.id === project.id ? <ProjectDetails key={project.id} project={editingProject} areas={areas} knownTags={knownTags} busy={busy} error={error} onSave={saveProject} onClose={closeProject} onCancel={async () => { if (await canLeaveEditor()) closeProject(); }} onDirtyChange={setEditorDirty}/> : <>
+              {!mobile && editingProject?.id === project.id ? <ProjectDetails editor={projectEditor!} setEditor={setProjectEditor} key={project.id} project={editingProject} areas={areas} knownTags={knownTags} busy={busy} error={error} onSave={saveProject} onClose={closeProject} onCancel={async () => { if (await canLeaveEditor()) closeProject(); }} onDirtyChange={setEditorDirty}/> : <>
                 <span className={`focusstar ${project.starred ? 'focused' : ''}`} aria-label={project.starred ? 'Focused' : undefined}>★</span>
                 <button className="projectcount" disabled={busy} aria-label={`Open tasks in ${project.name}`} onClick={() => selectProject(project.id)}>{count} {count === 1 ? 'Action' : 'Actions'}</button>
                 <button id={`project-title-${project.id}`} className="taskopen projecttitle" aria-label={`Edit project: ${project.name}`} aria-expanded={false} disabled={busy} onClick={() => editProject(project)}>{project.name}</button>
@@ -347,7 +361,7 @@ export default function App() {
             {(mobile || selectedTask?.id !== task.id) && <>
             <button className={`tasktitle taskopen ${task.status === 'completed' ? 'done' : ''}`} id={`task-title-${task.id}`} title={task.title} aria-label={`${selectedTask?.id === task.id ? 'Close' : 'Open'} task: ${task.title}`} aria-expanded={selectedTask?.id === task.id} aria-controls={`task-details-${task.id}`} onClick={() => openTask(task)}>{view === 'waiting' && taskPeople(task, allPeople).length > 0 && <span className="waitingperson">{taskPeople(task, allPeople).join(', ')}</span>}{task.title}{task.notes && display.notes === 'none' && <span className="tasknoteindicator" title="Has notes" role="img" aria-label="Has notes"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M2.5 2.5h11v8L10 13.5H2.5zM10 13.5V10h3.5M5 5.5h6M5 8h4"/></svg></span>}</button>
             </>}
-            {!mobile && selectedTask?.id === task.id ? <TaskDetails task={selectedTask} projects={projects} areas={areas} knownTags={knownTags} people={people} busy={busy} error={error} onSave={(changes, original) => saveTask(selectedTask, changes, original)} onDirtyChange={setEditorDirty} onClose={() => closeTaskDetails(task.id)} onCancel={async () => { if (await canLeaveEditor()) closeTaskDetails(task.id); }}/> : <div className="taskmeta">
+            {!mobile && selectedTask?.id === task.id ? <TaskDetails editor={taskEditor!} setEditor={setTaskEditor} task={selectedTask} projects={projects} areas={areas} knownTags={knownTags} people={people} busy={busy} error={error} onSave={(changes, original) => saveTask(selectedTask, changes, original)} onDirtyChange={setEditorDirty} onClose={() => closeTaskDetails(task.id)} onCancel={async () => { if (await canLeaveEditor()) closeTaskDetails(task.id); }}/> : <div className="taskmeta">
               {display.project && !task.project_id && task.area_id && <span className="taskcontext">{areas.find(a => a.id === task.area_id)?.name}</span>}
               {grouping !== 'project' && task.project_id && !projectId && <button className="taskprojectlink" onClick={() => selectProject(task.project_id!)}>{projects.find(project => project.id === task.project_id)?.name}</button>}
               {hasViewOptions && task.estimated_minutes !== null && <span>{task.estimated_minutes}m</span>}
@@ -366,11 +380,11 @@ export default function App() {
       </section>
       </>}
     </main>
-    {mobile && selectedTask && <Dialog title="Task details" variant="editor" onClose={async () => { if (await canLeaveEditor()) closeTaskDetails(selectedTask.id); }}>
-      <TaskDetails key={selectedTask.id} mobile task={selectedTask} projects={projects} areas={areas} knownTags={knownTags} people={people} busy={busy} error={error} onSave={(changes, original) => saveTask(selectedTask, changes, original)} onDirtyChange={setEditorDirty} onClose={() => closeTaskDetails(selectedTask.id)} onCancel={async () => { if (await canLeaveEditor()) closeTaskDetails(selectedTask.id); }}/>
+    {(mobile || !groups.some(group => (limitProjects && group.id && display.projectLimit && !expandedGroups.includes(group.id) ? group.tasks.slice(0, display.projectLimit) : group.tasks).some(task => task.id === selectedTask?.id))) && selectedTask && <Dialog title="Task details" variant="editor" onClose={async () => { if (await canLeaveEditor()) closeTaskDetails(selectedTask.id); }}>
+      <TaskDetails editor={taskEditor!} setEditor={setTaskEditor} key={selectedTask.id} mobile task={selectedTask} projects={projects} areas={areas} knownTags={knownTags} people={people} busy={busy} error={error} onSave={(changes, original) => saveTask(selectedTask, changes, original)} onDirtyChange={setEditorDirty} onClose={() => closeTaskDetails(selectedTask.id)} onCancel={async () => { if (await canLeaveEditor()) closeTaskDetails(selectedTask.id); }}/>
     </Dialog>}
-    {mobile && editingProject && <Dialog title="Project details" variant="editor" onClose={async () => { if (await canLeaveEditor()) closeProject(); }}>
-      <ProjectDetails key={editingProject.id} mobile project={editingProject} areas={areas} knownTags={knownTags} busy={busy} error={error} onSave={saveProject} onClose={closeProject} onCancel={async () => { if (await canLeaveEditor()) closeProject(); }} onDirtyChange={setEditorDirty}/>
+    {(mobile || !overview.some(row => row.project.id === editingProject?.id)) && editingProject && <Dialog title="Project details" variant="editor" onClose={async () => { if (await canLeaveEditor()) closeProject(); }}>
+      <ProjectDetails editor={projectEditor!} setEditor={setProjectEditor} key={editingProject.id} mobile project={editingProject} areas={areas} knownTags={knownTags} busy={busy} error={error} onSave={saveProject} onClose={closeProject} onCancel={async () => { if (await canLeaveEditor()) closeProject(); }} onDirtyChange={setEditorDirty}/>
     </Dialog>}
     {showManageTags && <ManageTags onClose={() => setShowManageTags(false)} onChanged={reload}/>}
     {showDiscard && <Dialog title="Discard unsaved changes?" onClose={() => decideDiscard(false)}>

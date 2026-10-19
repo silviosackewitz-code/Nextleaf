@@ -50,6 +50,39 @@ Protocol 3 carries tag identity, repeat rules, and the active timezone. Old sync
 rejected rather than silently losing that data. Do not downgrade a migrated
 SQLite database in place. Reverting the image alone is not a database rollback.
 
+## Update from 0.1.2 to 0.1.3
+
+This release migrates the database and sync protocol from 3 to 4. Stop desktop
+clients and back up both replicas and server configuration consistently. Preserve
+pending local edits. Update the server first; old clients cannot sync with protocol 4.
+Do not downgrade a migrated database in place.
+
+1. Download the matching `docker-compose.yml` and checksums from
+   [v0.1.3](https://github.com/silviosackewitz-code/Nextleaf/releases/tag/v0.1.3).
+   Verify the checksum, then replace only `/opt/nextleaf-app/docker-compose.yml`.
+2. Keep the existing `.env`, including secrets and data path. Set
+   `TASKMANAGER_IMAGE=ghcr.io/silviosackewitz-code/nextleaf:0.1.3` and add
+   `NEXTLEAF_HTTP_HOSTS=your-pi.your-tailnet.ts.net` with the actual private hostname
+   (no scheme, port or path). The new Compose file passes this setting to the server.
+3. Pull and recreate the service:
+
+```bash
+sudo docker compose --env-file /opt/nextleaf-app/.env -f /opt/nextleaf-app/docker-compose.yml config --quiet
+sudo docker compose --env-file /opt/nextleaf-app/.env -f /opt/nextleaf-app/docker-compose.yml pull
+sudo docker compose --env-file /opt/nextleaf-app/.env -f /opt/nextleaf-app/docker-compose.yml up -d --wait
+curl --fail http://127.0.0.1:8787/api/health
+```
+
+4. Check health through private HTTPS too; expect `sync-v4` and `scheduling`.
+5. Replace the Mac app using `Nextleaf-0.1.3-macOS-Apple-Silicon.dmg`, retaining
+   its existing data folder. Launch it, synchronize and check existing records.
+   Reload the iPhone web page. No uninstall or Nirvana reimport is needed.
+
+All missed repeating occurrences are retained. Backlogs above 100 pause until
+explicitly approved in Edit/Resume Repeating. This is still an ad-hoc-signed Mac
+test release without Developer ID or notarization. See the protocol/host and
+restore notes below before any rollback.
+
 ## Update from 0.1.1 to 0.1.2
 
 This is a shared UI update for the native Mac app and server-hosted iPhone view.
@@ -160,6 +193,68 @@ that the service is healthy afterward. Test restoration into a separate director
 and isolated port using the matching version before relying on a backup. Restore
 a consistent full snapshot, not selected tables. A full disaster-recovery exercise
 on the owner's Pi has not yet been completed.
+
+## Restoring a backup without rolling clients backward
+
+Before restoring, stop the server and close/suspend every desktop and local MCP
+process. Back up each client as well as the current server. Restore into an isolated
+location first and verify the matching version, SQLite integrity and contents.
+**Never reconnect existing desktops to an older server snapshot with the same
+`sync_identity`: unchanged client values could silently adopt the old server values.**
+
+Before exposing the restored server, rotate its identity in the restored database
+while it is stopped (substitute the actual database path):
+
+```bash
+sudo sqlite3 /srv/nextleaf/taskmanager.db 'BEGIN IMMEDIATE; DELETE FROM sync_receipts; DELETE FROM sync_identity; COMMIT;'
+```
+
+The next start/snapshot creates a fresh UUID. Existing clients now stop with an
+identity mismatch, preserving their data. Do not reset their baseline merely to
+silence the error. Compare the protected client and server backups, reconcile the
+intended records explicitly, then establish fresh client databases from the
+reconciled server. Preserve local Nirvana receipts separately. This procedure is a
+manual safeguard; automatic rollback detection is not implemented.
+
+## Protocol 4 and HTTP host configuration
+
+Back up both replicas before upgrading. The review fixes add a migration and sync
+protocol 4; update the server before every desktop. Old clients are rejected before
+writes. Do not downgrade a migrated database in place. Large repeat backlogs pause
+until approved in Edit/Resume Repeating. Generation stops at 50,000 total entity
+records; larger datasets need a different sync design.
+
+Set `NEXTLEAF_HTTP_HOSTS=nextleaf.example.ts.net` to your actual Tailscale hostname
+(no scheme, port or path) in the Compose `.env`. It falls back to `NEXTLEAF_MCP_HOSTS`
+if unset, and loopback is always allowed. Configure this **before** installing the
+new server, even when MCP is disabled, or private HTTPS requests will receive 403.
+Serve must forward the original Host. Browser requests must use the same origin;
+the development frontend already proxies /api. Arbitrary remote browser API URL
+overrides are no longer supported by server CORS.
+
+## Restrict private access explicitly
+
+REST/sync have no application login. Every peer allowed to reach the service can
+read and change its data. Tailscale's initial allow-all policy is not an owner-only
+boundary. Review grants, ACLs and shared-node access before exposing Serve.
+
+For example, replace the initial broad rule with a grant limited to the owner's
+actual login and the Pi's actual Tailscale IP, retaining separately reviewed rules
+for your other services:
+
+```json
+{
+  "grants": [
+    { "src": ["owner@example.com"], "dst": ["100.101.102.103"], "ip": ["tcp:443"] }
+  ]
+}
+```
+
+Do not simply append this alongside an allow-all rule: permissions are additive.
+Test access from the owner device and rejection from an unapproved device. No
+policy was changed or live tailnet access tested by the source review.
+See [Tailscale grant examples](https://tailscale.com/docs/reference/examples/grants)
+and [grants syntax](https://tailscale.com/docs/reference/syntax/grants).
 
 ## Historical local-build Pi releases
 

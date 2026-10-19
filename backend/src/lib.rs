@@ -1,10 +1,11 @@
 mod mcp;
 pub mod nirvana;
 pub mod schedule;
+mod web_security;
 
 use axum::{
     extract::{Path, Query, State},
-    http::{header, HeaderValue, Method, StatusCode},
+    http::{header, StatusCode},
     routing::{get, patch},
     Json, Router,
 };
@@ -15,7 +16,6 @@ use serde_json::{json, Value};
 use sqlx::{sqlite::SqlitePoolOptions, FromRow, SqlitePool};
 use std::{collections::HashMap, env, net::SocketAddr, path::PathBuf};
 use tower_http::{
-    cors::CorsLayer,
     services::{ServeDir, ServeFile},
     trace::TraceLayer,
 };
@@ -53,6 +53,13 @@ fn required_name(input: &str) -> Result<String, (StatusCode, Json<Value>)> {
     } else {
         Ok(name.to_owned())
     }
+}
+
+fn check_text(value: Option<&str>) -> Result<(), (StatusCode, Json<Value>)> {
+    if value.is_some_and(|v| v.len() > 1_000_000) {
+        return Err(bad_request("Text must not exceed 1,000,000 bytes"));
+    }
+    Ok(())
 }
 
 #[derive(Debug, Clone, Serialize, FromRow)]
@@ -331,6 +338,7 @@ async fn create_project(
     }
     let now = stamp();
     let id = uid();
+    check_text(input.notes.as_deref())?;
     let notes = input.notes.unwrap_or_default();
     let order: i64 = sqlx::query_scalar("SELECT COALESCE(MAX(sort_order), 0) + 100 FROM projects")
         .fetch_one(&mut *tx)
@@ -386,6 +394,7 @@ async fn update_project(
     {
         return Err(bad_request("No changes"));
     }
+    check_text(input.notes.as_deref())?;
     let name = input.name.as_deref().map(required_name).transpose()?;
     if input
         .project_type
@@ -402,7 +411,7 @@ async fn update_project(
         return Err(bad_request("Invalid project status"));
     }
     if let Some(Some(date)) = &input.due_date {
-        if chrono::NaiveDate::parse_from_str(date, "%Y-%m-%d").is_err() {
+        if schedule::date(date).is_err() {
             return Err(bad_request("Dates must use YYYY-MM-DD"));
         }
     }
@@ -546,7 +555,7 @@ async fn check_expected(
         ("project_tags", "project_id")
     };
     let fields=expected.keys().filter(|key|key.as_str()!="tags").map(|key| {
-        let value = if key=="area_id" && table=="tasks" {"COALESCE(area_id,(SELECT area_id FROM projects WHERE projects.id=tasks.project_id))"} else {key};
+        let value = if key=="area_id" && table=="tasks" {"CASE WHEN project_id IS NOT NULL THEN (SELECT area_id FROM projects WHERE projects.id=tasks.project_id) ELSE area_id END"} else {key};
         format!("'{key}',{value}")
     }).collect::<Vec<_>>().join(",");
     let row: Option<String> = sqlx::query_scalar(&format!(
@@ -605,7 +614,7 @@ async fn ensure_area(
     if archived {
         if let Some((table, owner)) = existing {
             let field = if table == "tasks" {
-                "COALESCE(area_id,(SELECT area_id FROM projects WHERE projects.id=tasks.project_id))"
+                "CASE WHEN project_id IS NOT NULL THEN (SELECT area_id FROM projects WHERE projects.id=tasks.project_id) ELSE area_id END"
             } else {
                 "area_id"
             };
@@ -781,8 +790,12 @@ fn decorate_tasks_on(rows: Vec<TaskRow>, today: chrono::NaiveDate) -> Vec<Task> 
             let available = task.status == "next" && project_active && !deferred && !blocked;
             Task {
                 id: task.id,
-                project_id: task.project_id,
-                area_id: task.area_id.or(task.project_area_id),
+                project_id: task.project_id.clone(),
+                area_id: if task.project_id.is_some() {
+                    task.project_area_id
+                } else {
+                    task.area_id
+                },
                 title: task.title,
                 notes: task.notes,
                 status: task.status,
@@ -805,7 +818,6 @@ fn decorate_tasks_on(rows: Vec<TaskRow>, today: chrono::NaiveDate) -> Vec<Task> 
         .collect()
 }
 async fn fetch_tasks(pool: &SqlitePool) -> Result<Vec<Task>, (StatusCode, Json<Value>)> {
-    schedule::tick(pool).await.map_err(internal)?;
     let clock = schedule::read_clock(&mut *pool.acquire().await.map_err(internal)?)
         .await
         .map_err(internal)?;
@@ -884,12 +896,35 @@ async fn list_tasks(
             .collect(),
     ))
 }
-async fn create_task(State(state): State<AppState>, Json(input): Json<NewTask>) -> ApiResult<Task> {
+async fn get_task(State(state): State<AppState>, Path(id): Path<String>) -> ApiResult<Task> {
+    fetch_tasks(&state.pool)
+        .await?
+        .into_iter()
+        .find(|task| task.id == id)
+        .map(Json)
+        .ok_or_else(not_found)
+}
+async fn create_task(
+    State(state): State<AppState>,
+    Json(mut input): Json<NewTask>,
+) -> ApiResult<Task> {
     let title = required_name(&input.title)?;
     if let Some(date) = &input.defer_until {
         schedule::date(date).map_err(bad_request)?;
     }
-    let status = input.status.unwrap_or_else(|| "inbox".into());
+    check_text(input.notes.as_deref())?;
+    if input.project_id.is_some() {
+        input.area_id = None;
+    }
+    let mut status = input.status.unwrap_or_else(|| "inbox".into());
+    if input.defer_until.is_some()
+        && !matches!(status.as_str(), "completed" | "trash" | "recurring")
+    {
+        status = "scheduled".into();
+    }
+    if status == "scheduled" && input.defer_until.is_none() {
+        return Err(bad_request("Scheduled tasks require a start date"));
+    }
     if !valid_task_status(&status) {
         return Err(bad_request("Invalid task status"));
     }
@@ -960,10 +995,13 @@ async fn update_task(
         input.status = Some("recurring".into());
         input.defer_until = Some(None);
     }
-    if input.status.as_ref().is_some_and(|s| {
-        !valid_task_status(s)
-            && !(s == "recurring" && input.recurrence.as_ref().is_some_and(|r| r.is_some()))
-    }) {
+    check_text(input.notes.as_deref())?;
+    check_text(input.waiting_for.as_ref().and_then(|v| v.as_deref()))?;
+    if input
+        .status
+        .as_ref()
+        .is_some_and(|s| !valid_task_status(s) && s != "recurring")
+    {
         return Err(bad_request("Invalid task status"));
     }
     if input
@@ -985,11 +1023,7 @@ async fn update_task(
         .flatten()
         .flatten()
     {
-        if chrono::NaiveDate::parse_from_str(date, "%Y-%m-%d").is_err()
-            && chrono::DateTime::parse_from_rfc3339(date).is_err()
-        {
-            return Err(bad_request("Dates must use YYYY-MM-DD or an ISO timestamp"));
-        }
+        schedule::date(date).map_err(bad_request)?;
     }
     if let Some(Some(project)) = &input.project_id {
         ensure_project(&state.pool, project).await?;
@@ -1009,8 +1043,74 @@ async fn update_task(
         .await
         .map_err(internal)?;
     check_expected(&mut tx, "tasks", &id, input.expected.as_ref()).await?;
-    if input.status.as_deref().is_some_and(|s| s != "recurring") {
+    let (old_status, old_date, old_rule, old_project): (
+        String,
+        Option<String>,
+        Option<sqlx::types::Json<schedule::RepeatRule>>,
+        Option<String>,
+    ) = sqlx::query_as("SELECT status,defer_until,recurrence,project_id FROM tasks WHERE id=?")
+        .bind(&id)
+        .fetch_optional(&mut *tx)
+        .await
+        .map_err(internal)?
+        .ok_or_else(not_found)?;
+    if let Some(Some(rule)) = &mut input.recurrence {
+        sqlx::query("INSERT OR IGNORE INTO repeat_cycles(template_id,rule_id) VALUES(?,?)")
+            .bind(&id)
+            .bind(old_rule.as_ref().map(|r| &r.id).unwrap_or(&rule.id))
+            .execute(&mut *tx)
+            .await
+            .map_err(internal)?;
+        rule.id = sqlx::query_scalar("SELECT rule_id FROM repeat_cycles WHERE template_id=?")
+            .bind(&id)
+            .fetch_one(&mut *tx)
+            .await
+            .map_err(internal)?;
+        if old_rule.as_ref().is_some_and(|old| {
+            old.frequency != rule.frequency
+                || old.interval != rule.interval
+                || old.start != rule.start
+                || old.until != rule.until
+                || old.due_days != rule.due_days
+        }) && old_rule
+            .as_ref()
+            .and_then(|old| old.catch_up_through.as_ref())
+            == rule.catch_up_through.as_ref()
+        {
+            rule.catch_up_through = None;
+        }
+    }
+    if input.status.as_deref() == Some("recurring")
+        && old_status != "recurring"
+        && old_rule.is_none()
+        && input.recurrence.as_ref().is_none_or(|r| r.is_none())
+        && !matches!(old_status.as_str(), "trash" | "completed")
+    {
+        return Err(bad_request("Supply a repeat rule to start repeating"));
+    }
+    if input
+        .status
+        .as_deref()
+        .is_some_and(|s| !matches!(s, "recurring" | "completed" | "trash"))
+    {
         input.recurrence = Some(None);
+    }
+    let status = input.status.as_deref().unwrap_or(&old_status);
+    let date = input.defer_until.as_ref().unwrap_or(&old_date);
+    if !matches!(status, "completed" | "trash" | "recurring") {
+        if date.is_some() && (input.defer_until.is_some() || matches!(status, "next" | "scheduled"))
+        {
+            input.status = Some("scheduled".into());
+        } else if status == "scheduled" && date.is_none() {
+            if input.defer_until == Some(None) {
+                input.status = Some("next".into());
+            } else {
+                return Err(bad_request("Scheduled tasks require a start date"));
+            }
+        }
+    }
+    if input.project_id.as_ref().unwrap_or(&old_project).is_some() {
+        input.area_id = Some(None);
     }
     if input.recurrence == Some(None) && input.status.is_none() {
         let status: Option<String> = sqlx::query_scalar("SELECT status FROM tasks WHERE id=?")
@@ -1087,6 +1187,7 @@ pub async fn create_pool(
         )
         .await?;
     sqlx::migrate!("./migrations").run(&pool).await?;
+    schedule::migrate_dates(&pool).await?;
     sync::migrate_client_state(&pool).await?;
     Ok(pool)
 }
@@ -1100,9 +1201,10 @@ fn configured_api_router(pool: SqlitePool, mcp_enabled: bool) -> Router {
         .route(
             "/health",
             get(move || async move {
-                Json(json!({"status":"ok","capabilities":["task-editing","item-creation","project-editing","mcp","sync","conditional-updates","tag-management","sync-v3","scheduling"],"mcp":{"enabled":mcp_enabled,"path":"/mcp"}}))
+                Json(json!({"status":"ok","capabilities":["task-editing","item-creation","project-editing","mcp","sync","conditional-updates","tag-management","sync-v4","scheduling","repeat-backlog-confirmation"],"mcp":{"enabled":mcp_enabled,"path":"/mcp"}}))
             }),
         )
+        .route("/schedule/preview", axum::routing::post(schedule::preview))
         .route("/schedule/timezone", axum::routing::post(schedule::report_timezone))
         .route("/areas", get(list_areas).post(create_area))
         .route("/areas/{id}", patch(update_area))
@@ -1111,7 +1213,7 @@ fn configured_api_router(pool: SqlitePool, mcp_enabled: bool) -> Router {
         .route("/tags", get(list_tags).post(create_tag))
         .route("/tags/{id}", patch(update_tag))
         .route("/tasks", get(list_tasks).post(create_task))
-        .route("/tasks/{id}", patch(update_task))
+        .route("/tasks/{id}", get(get_task).patch(update_task))
         .route("/sync", get(sync::get_snapshot).post(sync::exchange).layer(axum::extract::DefaultBodyLimit::max(16 * 1024 * 1024)))
         .with_state(state);
     Router::new().nest("/api", api)
@@ -1142,12 +1244,15 @@ pub async fn run() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
             database_url
                 .parse::<sqlx::sqlite::SqliteConnectOptions>()?
                 .create_if_missing(true)
-                .foreign_keys(true),
+                .foreign_keys(true)
+                .journal_mode(sqlx::sqlite::SqliteJournalMode::Wal)
+                .busy_timeout(std::time::Duration::from_secs(15)),
         )
         .await?;
     sqlx::migrate!("./migrations").run(&pool).await?;
+    schedule::migrate_dates(&pool).await?;
     sync::migrate_client_state(&pool).await?;
-    tokio::spawn(schedule::run(pool.clone()));
+    tokio::spawn(schedule::run(pool.clone(), true));
     let mcp_router = mcp::router(AppState { pool: pool.clone() })?;
     let mcp_enabled = env::var("NEXTLEAF_MCP_TOKEN").is_ok_and(|token| !token.is_empty());
     let web_dir = PathBuf::from(
@@ -1160,17 +1265,21 @@ pub async fn run() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         );
         tracing::info!("Serving web build from {}", web_dir.display());
     }
-    // Local development UI and packaged desktop origin only; never open unrestricted CORS.
-    let cors = CorsLayer::new()
-        .allow_origin([
-            HeaderValue::from_static("http://127.0.0.1:1420"),
-            HeaderValue::from_static("http://localhost:1420"),
-            HeaderValue::from_static("tauri://localhost"),
-            HeaderValue::from_static("http://tauri.localhost"),
-        ])
-        .allow_methods([Method::GET, Method::POST, Method::PATCH])
-        .allow_headers([header::CONTENT_TYPE]);
-    app = app.layer(cors).layer(TraceLayer::new_for_http());
+    let mut hosts: Vec<String> = env::var("NEXTLEAF_HTTP_HOSTS")
+        .or_else(|_| env::var("NEXTLEAF_MCP_HOSTS"))
+        .unwrap_or_default()
+        .split(',')
+        .map(str::trim)
+        .filter(|v| !v.is_empty())
+        .map(str::to_owned)
+        .collect();
+    hosts.extend(["localhost".into(), "127.0.0.1".into(), "[::1]".into()]);
+    app = app
+        .layer(axum::middleware::from_fn_with_state(
+            hosts,
+            web_security::protect,
+        ))
+        .layer(TraceLayer::new_for_http());
     let listener = tokio::net::TcpListener::bind(bind).await?;
     tracing::info!("Nextleaf listening on http://{bind}");
     axum::serve(listener, app).await?;
@@ -1569,5 +1678,126 @@ mod tests {
             .0,
             StatusCode::NOT_FOUND
         );
+    }
+
+    #[tokio::test]
+    async fn reviewed_task_invariants_preserve_schedule_and_project_inheritance() {
+        let pool = SqlitePoolOptions::new()
+            .max_connections(1)
+            .connect("sqlite::memory:")
+            .await
+            .unwrap();
+        sqlx::migrate!("./migrations").run(&pool).await.unwrap();
+        let state = AppState { pool };
+        sqlx::raw_sql("INSERT INTO areas(id,name,created_at,updated_at) VALUES('a','A','now','now'),('b','B','now','now'); INSERT INTO projects(id,name,area_id,created_at,updated_at) VALUES('p','P','b','now','now');").execute(&state.pool).await.unwrap();
+        let task = create_task(State(state.clone()), Json(serde_json::from_value(json!({"title":"Task", "project_id":"p", "area_id":"a", "status":"next", "defer_until":"2099-10-25"})).unwrap())).await.unwrap().0;
+        assert_eq!(task.area_id.as_deref(), Some("b"));
+        assert_eq!(task.status, "scheduled");
+        let id = task.id;
+        for changes in [
+            json!({"status":"completed"}),
+            json!({"status":"scheduled"}),
+            json!({"status":"trash"}),
+            json!({"status":"scheduled"}),
+        ] {
+            let t = update_task(
+                State(state.clone()),
+                Path(id.clone()),
+                Json(serde_json::from_value(changes).unwrap()),
+            )
+            .await
+            .unwrap()
+            .0;
+            assert_eq!(t.defer_until.as_deref(), Some("2099-10-25"));
+        }
+        let t = update_task(
+            State(state.clone()),
+            Path(id.clone()),
+            Json(serde_json::from_value(json!({"defer_until":null})).unwrap()),
+        )
+        .await
+        .unwrap()
+        .0;
+        assert_eq!(t.status, "next");
+        for date in ["2026-10-5", " 2026-12-24", "2026-10-19T22:00:00Z"] {
+            assert!(update_task(
+                State(state.clone()),
+                Path(id.clone()),
+                Json(serde_json::from_value(json!({"due_date":date})).unwrap())
+            )
+            .await
+            .is_err());
+            assert!(update_project(
+                State(state.clone()),
+                Path("p".into()),
+                Json(serde_json::from_value(json!({"due_date":date})).unwrap())
+            )
+            .await
+            .is_err());
+        }
+        let rule = json!({"id":uid(),"frequency":"weekly","interval":1,"start":"2099-01-01","until":null,"due_days":null,"paused":false});
+        let mut t = update_task(
+            State(state.clone()),
+            Path(id.clone()),
+            Json(serde_json::from_value(json!({"recurrence":rule})).unwrap()),
+        )
+        .await
+        .unwrap()
+        .0;
+        let cycle = t.recurrence.as_ref().unwrap().id.clone();
+        for changes in [
+            json!({"status":"trash"}),
+            json!({"status":"recurring"}),
+            json!({"status":"completed"}),
+            json!({"status":"recurring"}),
+        ] {
+            t = update_task(
+                State(state.clone()),
+                Path(id.clone()),
+                Json(serde_json::from_value(changes).unwrap()),
+            )
+            .await
+            .unwrap()
+            .0;
+            assert_eq!(t.recurrence.as_ref().unwrap().id, cycle);
+        }
+        let _ = update_task(
+            State(state.clone()),
+            Path(id.clone()),
+            Json(serde_json::from_value(json!({"status":"next","recurrence":null})).unwrap()),
+        )
+        .await
+        .unwrap();
+        let mut changed = rule;
+        changed["id"] = json!(uid());
+        t = update_task(
+            State(state.clone()),
+            Path(id.clone()),
+            Json(serde_json::from_value(json!({"recurrence":changed})).unwrap()),
+        )
+        .await
+        .unwrap()
+        .0;
+        assert_eq!(t.recurrence.as_ref().unwrap().id, cycle);
+        assert!(update_task(
+            State(state.clone()),
+            Path(id),
+            Json(serde_json::from_value(json!({"notes":"x".repeat(1_000_001)})).unwrap())
+        )
+        .await
+        .is_err());
+    }
+    #[tokio::test]
+    async fn reads_do_not_wait_for_scheduler_write_lock() {
+        let directory = std::env::temp_dir().join(format!("nextleaf-read-{}", uid()));
+        let pool = create_pool(&directory.join("test.db")).await.unwrap();
+        let tx = pool.begin_with("BEGIN IMMEDIATE").await.unwrap();
+        tokio::time::timeout(std::time::Duration::from_secs(2), fetch_tasks(&pool))
+            .await
+            .unwrap()
+            .unwrap();
+        tx.rollback().await.unwrap();
+        pool.close().await;
+        std::fs::remove_dir_all(directory).unwrap();
     }
 }

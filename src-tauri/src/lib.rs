@@ -2,13 +2,21 @@ use axum::{
     body::{to_bytes, Body},
     http::{Method, Request},
 };
-use nextleaf_server::sync::{SyncEngine, SyncStatus};
+use nextleaf_server::sync::{SyncConflict, SyncEngine, SyncStatus};
 use serde::Serialize;
 use sqlx::SqlitePool;
 use std::{path::PathBuf, sync::Arc};
 use tauri::{Emitter, Manager};
 use tokio::sync::Mutex;
 use tower::ServiceExt;
+
+struct StartupFailure(String);
+
+#[tauri::command]
+fn desktop_startup_error(app: tauri::AppHandle) -> Option<String> {
+    app.try_state::<StartupFailure>()
+        .map(|error| error.0.clone())
+}
 
 struct DesktopState {
     pool: SqlitePool,
@@ -91,8 +99,15 @@ async fn desktop_sync(
 }
 
 #[tauri::command]
+async fn desktop_disconnect(state: tauri::State<'_, DesktopState>) -> Result<SyncStatus, String> {
+    let _guard = state.sync_lock.lock().await;
+    SyncEngine::new(state.pool.clone()).disconnect().await
+}
+
+#[tauri::command]
 async fn desktop_resolve(
     choice: String,
+    selected: Option<SyncConflict>,
     state: tauri::State<'_, DesktopState>,
     app: tauri::AppHandle,
 ) -> Result<SyncStatus, String> {
@@ -101,7 +116,7 @@ async fn desktop_resolve(
     }
     let _guard = state.sync_lock.lock().await;
     let result = SyncEngine::new(state.pool.clone())
-        .resolve_conflicts(&choice)
+        .resolve_selected(&choice, selected.as_ref())
         .await;
     let _ = app.emit("nextleaf-data-changed", ());
     result
@@ -133,7 +148,10 @@ async fn background_sync(pool: SqlitePool, lock: Arc<Mutex<()>>, app: Option<tau
         let _guard = lock.lock().await;
         let engine = SyncEngine::new(pool.clone());
         if let Ok(status) = engine.status().await {
-            if let Some(remote) = status.remote_url.filter(|url| !url.is_empty()) {
+            if let Some(remote) = status
+                .remote_url
+                .filter(|url| !url.is_empty() && !status.suspended)
+            {
                 let _ = engine.sync_once(&remote).await;
                 if let Some(app) = &app {
                     let _ = app.emit("nextleaf-data-changed", ());
@@ -153,7 +171,7 @@ pub fn run() {
                 let pool = nextleaf_server::create_pool(&directory.join("nextleaf.db"))
                     .await
                     .map_err(|e| e.to_string())?;
-                tokio::spawn(nextleaf_server::schedule::run(pool.clone()));
+                tokio::spawn(nextleaf_server::schedule::run(pool.clone(), false));
                 tokio::spawn(background_sync(
                     pool.clone(),
                     Arc::new(Mutex::new(())),
@@ -172,25 +190,34 @@ pub fn run() {
     }
     tauri::Builder::default()
         .setup(|app| {
-            let directory = data_directory().map_err(std::io::Error::other)?;
-            let pool = tauri::async_runtime::block_on(nextleaf_server::create_pool(
-                &directory.join("nextleaf.db"),
-            ))
-            .map_err(|e| std::io::Error::other(e.to_string()))?;
+            let directory = match data_directory() {
+                Ok(directory) => directory,
+                Err(error) => { app.manage(StartupFailure(error)); return Ok(()); }
+            };
+            let database = directory.join("nextleaf.db");
+            let pool = match tauri::async_runtime::block_on(nextleaf_server::create_pool(&database)) {
+                Ok(pool) => pool,
+                Err(error) => {
+                    app.manage(StartupFailure(format!("Could not open {}\n\n{error}\n\nYour data has not been reset. Keep a backup and use a compatible Nextleaf version.", database.display())));
+                    return Ok(());
+                }
+            };
             let lock = Arc::new(Mutex::new(()));
             app.manage(DesktopState {
                 pool: pool.clone(),
                 sync_lock: lock.clone(),
                 data_dir: directory,
             });
-            tauri::async_runtime::spawn(nextleaf_server::schedule::run(pool.clone()));
+            tauri::async_runtime::spawn(nextleaf_server::schedule::run(pool.clone(), false));
             tauri::async_runtime::spawn(background_sync(pool, lock, Some(app.handle().clone())));
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
+            desktop_startup_error,
             desktop_api,
             desktop_status,
             desktop_sync,
+            desktop_disconnect,
             desktop_resolve,
             desktop_info
         ])

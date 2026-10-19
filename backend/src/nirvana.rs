@@ -1,4 +1,4 @@
-use chrono::{NaiveDate, Utc};
+use chrono::Utc;
 use rmcp::schemars;
 use serde::Deserialize;
 use serde_json::Value;
@@ -67,7 +67,7 @@ fn validate(snapshot: &Snapshot) -> Result<Vec<Item>> {
     let mut ids = HashSet::new();
     let mut tags = HashSet::new();
     for tag in &snapshot.tags {
-        if tag.name.trim().is_empty()
+        if super::required_name(&tag.name).is_err()
             || !matches!(tag.kind.as_str(), "area" | "context")
             || !tags.insert(&tag.name)
         {
@@ -75,7 +75,15 @@ fn validate(snapshot: &Snapshot) -> Result<Vec<Item>> {
         }
     }
     for item in &items {
-        if item.id.is_empty() || !ids.insert(&item.id) || item.name.trim().is_empty() {
+        if item.id.is_empty()
+            || !ids.insert(&item.id)
+            || super::required_name(&item.name).is_err()
+            || item.note.len() > 1_000_000
+            || item
+                .waitingfor
+                .as_ref()
+                .is_some_and(|v| v.len() > 1_000_000)
+        {
             return Err("Invalid or duplicate item identity/name".into());
         }
         let states: &[&str] = match item.kind.as_str() {
@@ -107,7 +115,7 @@ fn validate(snapshot: &Snapshot) -> Result<Vec<Item>> {
         .into_iter()
         .flatten()
         {
-            if NaiveDate::parse_from_str(date, "%Y-%m-%d")?.to_string() != *date {
+            if super::schedule::date(date).is_err() {
                 return Err("Invalid source date".into());
             }
         }
@@ -180,6 +188,10 @@ pub async fn import(conn: &mut SqliteConnection, snapshot: Snapshot) -> Result<(
         };
         targets.insert(item.id.clone(), target);
     }
+    if existing.len() == items.len() {
+        tx.commit().await?;
+        return Ok((0, existing.len()));
+    }
     let mut area_ids = HashMap::new();
     let mut tag_ids = HashMap::new();
     for tag in &snapshot.tags {
@@ -246,6 +258,10 @@ pub async fn import(conn: &mut SqliteConnection, snapshot: Snapshot) -> Result<(
                 "trash"
             } else if completed.is_some() {
                 "completed"
+            } else if item.state == "next" && item.startdate.is_some() {
+                "scheduled"
+            } else if item.state == "scheduled" && item.startdate.is_none() {
+                "next"
             } else {
                 &item.state
             };
@@ -264,7 +280,7 @@ pub async fn import(conn: &mut SqliteConnection, snapshot: Snapshot) -> Result<(
             } else {
                 let parent = item.parent.as_ref().map(|p| &targets[&p.id]);
                 sqlx::query("INSERT INTO tasks(id,project_id,area_id,title,notes,status,sort_order,due_date,defer_until,completed_at,created_at,updated_at,starred,waiting_for,estimated_minutes,energy) VALUES(?,?,?,?,?,?,(SELECT COALESCE(MAX(sort_order),0)+100 FROM tasks),?,?,?,?,?,?,?,?,?)")
-                    .bind(id).bind(parent).bind(area).bind(&item.name).bind(&item.note).bind(status).bind(&item.duedate).bind(&item.startdate).bind(completed).bind(&item.created).bind(&now).bind(item.starred).bind(&item.waitingfor).bind(item.etime).bind(item.energy).execute(&mut *tx).await?;
+                    .bind(id).bind(parent).bind(if parent.is_some() { None } else { area }).bind(&item.name).bind(&item.note).bind(status).bind(&item.duedate).bind(&item.startdate).bind(completed).bind(&item.created).bind(&now).bind(item.starred).bind(&item.waitingfor).bind(item.etime).bind(item.energy).execute(&mut *tx).await?;
                 for tag in &item.tags {
                     if let Some(tag_id) = tag_ids.get(tag) {
                         sqlx::query("INSERT INTO task_tags(task_id,tag_id) VALUES(?,?)")
@@ -425,6 +441,29 @@ mod tests {
                 .fetch_one(&mut db)
                 .await?,
             1
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn identical_retry_after_metadata_renames_and_contact_conversion_is_a_noop() -> Result<()>
+    {
+        let mut db = SqliteConnection::connect("sqlite::memory:").await?;
+        sqlx::migrate!("./migrations").run(&mut db).await?;
+        import(&mut db, snapshot()).await?;
+        sqlx::raw_sql("UPDATE areas SET name='Renamed',archived=1; UPDATE tags SET kind='person',name='Contact',archived=1;").execute(&mut db).await?;
+        assert_eq!(import(&mut db, snapshot()).await?, (0, 3));
+        assert_eq!(
+            sqlx::query_scalar::<_, i64>("SELECT COUNT(*) FROM areas")
+                .fetch_one(&mut db)
+                .await?,
+            1
+        );
+        assert_eq!(
+            sqlx::query_scalar::<_, String>("SELECT name FROM tags")
+                .fetch_one(&mut db)
+                .await?,
+            "Contact"
         );
         Ok(())
     }

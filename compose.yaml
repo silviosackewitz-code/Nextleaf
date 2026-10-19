@@ -19,6 +19,7 @@ services:
       TASKMANAGER_BIND: "0.0.0.0:8787"
       TASKMANAGER_DATABASE_URL: "sqlite:///data/taskmanager.db"
       TASKMANAGER_WEB_DIR: "/app/web"
+      NEXTLEAF_HTTP_HOSTS: "${NEXTLEAF_HTTP_HOSTS:-${NEXTLEAF_MCP_HOSTS:-localhost,127.0.0.1}}"
       NEXTLEAF_MCP_TOKEN: "${NEXTLEAF_MCP_TOKEN:-}"
       NEXTLEAF_MCP_HOSTS: "${NEXTLEAF_MCP_HOSTS:-localhost,127.0.0.1}"
     volumes:

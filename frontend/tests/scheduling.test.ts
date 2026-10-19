@@ -19,3 +19,10 @@ test('scheduled labels retain the date and use compact English month names', () 
     assert.equal(stateLabel({ status: 'scheduled', defer_until } as import('../src/api.ts').Task), 'Scheduled: Oct 19, 2026');
   }
 });
+
+test('completion and trash preserve start dates and repeat rules for reopening', async () => {
+  const { stateChange } = await import('../src/scheduling.ts');
+  assert.deepEqual(stateChange('completed'), { status: 'completed' });
+  assert.deepEqual(stateChange('trash'), { status: 'trash' });
+  assert.deepEqual(stateChange('next'), { status: 'next', defer_until: null, recurrence: null });
+});

@@ -1,5 +1,25 @@
 # Session handoff
 
+## 0.1.3 release preparation — 2026-10-19
+
+The owner authorized commit, push, publication and installation as version 0.1.3.
+The release includes the reviewed repairs below, sync protocol 4 and mandatory
+HTTP host configuration. Packaging, public container checks and the backed-up
+server-first installation are in progress; completion is recorded separately.
+
+
+## Latest source work — 2026-10-19
+
+The Inbox review has been verified and repaired in source. Read
+[REVIEW_RESOLUTION.md](REVIEW_RESOLUTION.md) and the latest NEXT_STEPS section
+before packaging. Protocol 4 adds repeat backlog approval and stable cycle
+identity sync. The owner requested all missed repeats, with confirmation above
+100; do not substitute latest-only catch-up. Current source tests: 52 backend,
+45 frontend, TypeScript/Vite, Tauri check, and isolated Chromium checks pass.
+No live update or release was performed. Configure HTTP host allowlisting before
+server-first upgrade; preserve backups and pre-existing uncommitted documentation.
+
+
 Updated 2026-10-18. Use NEXT_STEPS for actual verification and SPECIFICATION for
 requirements. Do not infer missing decisions from old chat previews.
 
@@ -16,7 +36,7 @@ Installation revision 3 contains the repaired ad-hoc-signed Mac DMG. Detailed
 remaining acceptance checks are in NEXT_STEPS. Test tasks remain disposable.
 No Apple Developer membership/certificate is available; do not claim notarization.
 
-## UI refinement release 0.1.2 — published, owner update pending
+## UI refinement release 0.1.2 — owner update and sync verified
 
 The owner rejected the duplicated State chevron, wrapping scheduled ISO date and
 uneven notes/tag alignment, and asked for a more spacious list. The source now
@@ -45,11 +65,32 @@ were independently downloaded and matched the published checksums.
 [Container/update verification](https://github.com/silviosackewitz-code/Nextleaf/actions/runs/39196352642)
 · [Public install verification](https://github.com/silviosackewitz-code/Nextleaf/actions/runs/39196892721).
 
-The owner plans to install 0.1.2 on the following day; the real Mac and Pi remain
-on 0.1.1. Schema and sync protocol stay at version 3. Owner update/scheduling
-acceptance and physical iPhone keyboard checks remain pending. Community UI and
-installation requests are open in issues #1 and #2, now targeting 0.1.2; external
-tester results have not been received as part of this verification.
+The owner completed the 0.1.2 update on 2026-10-18 after consistent Pi and Mac
+backups. The installed Mac bundle passed strict deep signature verification,
+launched, and completed an explicit Sync now request. The Pi reports healthy
+through loopback and private HTTPS; its frontend assets match the 0.1.2 build.
+All 122 tasks, 11 projects, 3 Areas, 13 tags, their fields and associations matched
+between Mac and Pi before the separately authorized Nirvana replacement below.
+No sync errors or conflicts were present. Schema and sync protocol stay at 3.
+Scheduling acceptance and physical iPhone keyboard checks remain pending.
+Community requests remain open in issues #1 and #2; no external tester results
+have been received as part of this verification.
+
+The owner then authorized Nirvana as the authoritative source for a complete
+one-time replacement, including removal of Nextleaf-only test data. The complete
+MCP snapshot contained 124 tasks and 12 projects, including Logbook and Trash;
+independent history reads matched. The existing shared importer populated an
+isolated database through the installed app's stdio MCP. Every supported field,
+relation and raw receipt was checked, and identical retries inserted zero records.
+Fresh Pi/config and Mac backups preceded coordinated database replacement;
+server identity and the saved Mac connection were preserved while the old sync
+baseline and server receipts were reset. The live Mac and Pi now contain 124
+tasks, 12 projects, 3 Areas and 13 tags, with 136 local import receipts. The two
+previously selected Contacts were restored through MCP. All stored entity fields
+and tag associations matched after live sync with no errors or conflicts. A tag
+archive and task-tag edit made after import also converged and were retained.
+Nirvana was read-only. The single recurring source template remains inert because
+MCP supplies no complete rule; this transfer adds no ongoing Nirvana sync.
 
 ## Scheduling and Contacts update 0.1.1 — owner update and sync accepted
 

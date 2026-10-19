@@ -50,9 +50,9 @@ with tempfile.TemporaryDirectory(prefix='nextleaf-container-check-') as temporar
         base = 'http://' + compose('port', 'nextleaf', '8787', capture=True).stdout.strip()
         health = request('/api/health')
         assert health['status'] == 'ok'
-        assert {'tag-management', 'sync-v3', 'scheduling'} <= set(health['capabilities'])
+        assert {'tag-management', 'sync-v4', 'scheduling'} <= set(health['capabilities'])
         initial = request('/api/sync')
-        assert initial['snapshot']['protocol'] == 3
+        assert initial['snapshot']['protocol'] == 4
         if upgraded:
             assert initial['server_id'] == upgraded['server_id']
             for table in ['tasks', 'projects', 'areas', 'tags']:
@@ -78,6 +78,7 @@ with tempfile.TemporaryDirectory(prefix='nextleaf-container-check-') as temporar
             'id': str(uuid.uuid4()), 'frequency': 'daily', 'interval': 1,
             'start': today, 'until': today, 'due_days': 0, 'paused': False,
         }}, 'PATCH')
+        request('/api/schedule/timezone', {'timezone': 'UTC'})
         copies = [item for item in request('/api/tasks?view=next') if item['title'] == 'Repeat container check']
         assert len(copies) == 1 and copies[0]['starred'] and copies[0]['due_date'] == today
         before = request('/api/sync')

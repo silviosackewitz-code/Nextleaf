@@ -39,6 +39,7 @@ export async function request<T>(path: string, options?: RequestInit): Promise<T
   return await response.json() as T;
 }
 export const api = {
+  repeatBacklog: (template_id: string, rule: RepeatRule) => request<{ count: number; through: string }>('/schedule/preview', { method: 'POST', body: JSON.stringify({ template_id, rule }) }),
   reportTimezone: async () => {
     if (!(await api.health()).capabilities?.includes('scheduling')) return;
     await request('/schedule/timezone', { method: 'POST', body: JSON.stringify({ timezone: Intl.DateTimeFormat().resolvedOptions().timeZone }) });
@@ -66,6 +67,7 @@ export const api = {
     if (expected && !health.capabilities?.includes('conditional-updates')) throw new Error('Update the Nextleaf server before saving. Your changes have not been saved.');
     return request<Project>(`/projects/${id}`, { method: 'PATCH', body: JSON.stringify(expected ? { ...changes, expected } : changes) });
   },
+  task: (id: string) => request<Task>(`/tasks/${id}`),
   tasks: (view: View, areaId?: string, projectId?: string) => {
     const p = new URLSearchParams({ view });
     if (areaId) p.set('area_id', areaId);

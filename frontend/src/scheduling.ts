@@ -2,9 +2,9 @@ import type { Task } from './api';
 import type { TaskChanges } from './taskEdit';
 import { dateKey } from './calendar.ts';
 
-export type RepeatRule = { id: string; frequency: 'daily' | 'weekly' | 'monthly' | 'yearly'; interval: number; start: string; until: string | null; due_days: number | null; paused: boolean };
+export type RepeatRule = { id: string; frequency: 'daily' | 'weekly' | 'monthly' | 'yearly'; interval: number; start: string; until: string | null; due_days: number | null; paused: boolean; catch_up_through?: string | null };
 export function stateChange(status: string): TaskChanges {
-  return { status, defer_until: null, recurrence: null };
+  return ['completed', 'trash'].includes(status) ? { status } : { status, defer_until: null, recurrence: null };
 }
 export function scheduleChange(date: string | null): TaskChanges {
   return { ...stateChange(date ? 'scheduled' : 'next'), defer_until: date, ...(date ? { starred: false } : {}) };

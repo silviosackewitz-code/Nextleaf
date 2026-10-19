@@ -45,9 +45,11 @@ uses source retrieval order where no explicit order exists, and raw source
 metadata preserves information the application cannot interpret.
 Recurring templates are visible in Scheduled but do not generate occurrences
 without a known recurrence rule. `schedule.rs` executes known rules and start dates
-in an immediate transaction. A 30-second worker plus API/sync checks catch up due
-work. Connected desktops never generate locally. Stable UUIDv5 occurrence IDs
-include template, cycle identity, and calendar date; retained task rows prevent
+in an immediate transaction. A 30-second worker, timezone reports and explicit sync exchanges catch up due
+work; task reads do not acquire the scheduling write lock. Server scheduling is
+selected by the process role, independently of desktop metadata in a copied DB. Connected desktops never generate locally. Stable UUIDv5 occurrence IDs
+include template, cycle identity, and calendar date; a synchronized `repeat_cycles` ledger
+retains each template’s cycle identity through Stop/Resume, including sync writes; retained task rows prevent
 duplicates even after a copy is deleted. Timezone rules use chrono-tz (including
 DST), not the Pi operating-system timezone. Clock metadata merges by report time;
 it is kept separate from field-conflict resolution for task data. Completion is saved immediately. The frontend
@@ -63,16 +65,28 @@ continue accepting tag names while the database and sync retain IDs.
 ## Desktop sync
 
 `backend/src/sync.rs` implements bidirectional snapshot sync with server identity,
-per-client baseline, and retry protection. Protocol 3 adds repeat rules and the last active client time zone to protocol 2
-tag metadata. Local v1/v2 baselines migrate at startup; pending older requests
+per-client baseline, and retry protection. Protocol 4 adds bounded explicit backlog approval and retained cycle identities to
+protocol 3 repeat rules.
+Local v1/v2/v3 baselines migrate at startup, preserving repeat rules and local edits;
+pending older requests
 are reconciled against the retained baseline with a new sequence. Incompatible
 requests fail before mutation. Update the server before desktop clients.
 
-Three-way comparison merges independent edits. Same-field changes surface explicit
+Three-way comparison merges independent edits. Scheduling (`status`, `defer_until`,
+`recurrence`) and assignment (`project_id`, `area_id`) merge together. Each conflict
+can be resolved independently. Definitive HTTP rejections clear only that request;
+network failures and retryable responses retain it. Server messages reach Settings.
+Receipts store SHA-256 request fingerprints and replies, bounded to 128 client IDs
+and 64 MiB in total; exceeding either budget fails atomically without pruning live
+retry protection. Same-field changes surface explicit
 conflicts; the UI lets the user choose values. Expected-value guards reject stale
 resolutions and stale ordinary edits atomically. Protect assignment integrity,
 transaction rollback, server identity, and URL binding. Snapshot limits are 16 MiB
-and 50,000 records. Do not resolve conflicts by silently replacing a database.
+and 50,000 records. Removed established IDs stop sync; snapshot application uses
+upserts and never deletes entity rows. A separately authorized full reset must
+replace both replicas consistently and reset the old baseline/retry receipts;
+it can preserve the server identity and saved URL. Do not resolve conflicts by
+silently replacing a database.
 
 Desktop data lives under `dirs::data_dir()/dev.taskmanager.desktop/nextleaf.db`.
 On macOS this is `~/Library/Application Support/dev.taskmanager.desktop/nextleaf.db`.
@@ -88,7 +102,9 @@ A web client writes directly to the Pi and requires connectivity.
 ## Shared UI and responsive behavior
 
 One React frontend serves desktop and web. Native dialog/popover primitives supply
-focus containment and dismissal. Desktop titles open accessible inline editors;
+focus containment and dismissal. App owns editor drafts across layout switches and list reloads. Clean fields rebase
+on refreshed data; conflicting dirty fields offer explicit choices. A row removed
+from the current view keeps its editor in a sheet. Desktop titles open accessible inline editors;
 Save/Cancel/Escape restore focus. TaskFields and TagEditor share form behavior.
 The primary fields are Time, Energy, Due, State, and Project; additional fields
 are reached through State → Scheduled or State → Waiting. The shared StateField
@@ -126,6 +142,13 @@ Release Compose drops capabilities, uses a read-only root filesystem and a bound
 `/tmp`, binds only `127.0.0.1:8787`, and mounts a precreated host data directory.
 Tailscale Serve terminates private HTTPS on the host. REST/sync currently have no
 application login. MCP authentication does not protect those other endpoints.
+Server middleware validates Host against NEXTLEAF_HTTP_HOSTS (falling back to
+NEXTLEAF_MCP_HOSTS, with loopback always allowed), rejects foreign Origin, and sets
+anti-framing/nosniff headers. Production has no cross-origin CORS allowance; Vite
+uses its existing /api proxy and desktop uses IPC. Packaged Tauri has a CSP.
+SQLite uses WAL and a 15-second busy timeout in both server and desktop.
+Upgrade keeps overwritten legacy direct Area/date values in local audit tables.
+Desktop DB initialization failure displays the path and cause in its app window.
 
 `compose.yaml` and `deploy/.env.example` support historical local image builds.
 `deploy/release/docker-compose.yml` and `example.env` select a published version.

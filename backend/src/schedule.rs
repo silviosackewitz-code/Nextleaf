@@ -12,14 +12,67 @@ pub struct RepeatRule {
     pub until: Option<String>,
     pub due_days: Option<u32>,
     pub paused: bool,
+    /// Explicit approval for more than 100 missed copies appearing on or before this date.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub catch_up_through: Option<String>,
 }
 pub fn date(value: &str) -> Result<NaiveDate, &'static str> {
     let parsed =
         NaiveDate::parse_from_str(value, "%Y-%m-%d").map_err(|_| "Use a valid YYYY-MM-DD date")?;
-    if parsed.to_string() != value || parsed.year() < 1900 {
-        return Err("Dates must be on or after 1900-01-01");
+    if parsed.to_string() != value || !(1900..=9999).contains(&parsed.year()) {
+        return Err("Use canonical YYYY-MM-DD dates from 1900 through 9999");
     }
     Ok(parsed)
+}
+pub(crate) fn legacy_date(value: &str, clock: &Clock) -> Result<String, String> {
+    let day = if let Ok(timestamp) = DateTime::parse_from_rfc3339(value) {
+        clock.today(timestamp.with_timezone(&Utc))
+    } else {
+        NaiveDate::parse_from_str(value.trim(), "%Y-%m-%d").map_err(|e| e.to_string())?
+    };
+    let result = day.to_string();
+    date(&result).map_err(str::to_owned)?;
+    Ok(result)
+}
+pub(crate) async fn migrate_dates(pool: &SqlitePool) -> Result<(), String> {
+    let mut tx = pool
+        .begin_with("BEGIN IMMEDIATE")
+        .await
+        .map_err(|e| e.to_string())?;
+    let clock = read_clock(&mut tx).await.map_err(|e| e.to_string())?;
+    for (table, field) in [
+        ("tasks", "due_date"),
+        ("tasks", "defer_until"),
+        ("projects", "due_date"),
+    ] {
+        let rows: Vec<(String, String)> = sqlx::query_as(&format!(
+            "SELECT id,{field} FROM {table} WHERE {field} IS NOT NULL"
+        ))
+        .fetch_all(&mut *tx)
+        .await
+        .map_err(|e| e.to_string())?;
+        for (id, raw) in rows {
+            if date(&raw).is_ok() {
+                continue;
+            }
+            let canonical = legacy_date(&raw, &clock)?;
+            sqlx::query("INSERT OR IGNORE INTO date_repairs VALUES(?,?,?,?)")
+                .bind(table)
+                .bind(&id)
+                .bind(field)
+                .bind(&raw)
+                .execute(&mut *tx)
+                .await
+                .map_err(|e| e.to_string())?;
+            sqlx::query(&format!("UPDATE {table} SET {field}=? WHERE id=?"))
+                .bind(canonical)
+                .bind(id)
+                .execute(&mut *tx)
+                .await
+                .map_err(|e| e.to_string())?;
+        }
+    }
+    tx.commit().await.map_err(|e| e.to_string())
 }
 impl RepeatRule {
     pub fn validate(&self) -> Result<(), &'static str> {
@@ -34,6 +87,9 @@ impl RepeatRule {
             return Err("Choose a repeat interval from 1 to 1000");
         }
         let start = date(&self.start)?;
+        if let Some(day) = &self.catch_up_through {
+            date(day)?;
+        }
         if self
             .until
             .as_deref()
@@ -163,14 +219,24 @@ pub async fn tick(pool: &SqlitePool) -> Result<(), sqlx::Error> {
     advance(&mut tx, Utc::now()).await?;
     tx.commit().await
 }
-pub async fn run(pool: SqlitePool) {
+pub async fn run(pool: SqlitePool, server: bool) {
     let mut timer = tokio::time::interval(std::time::Duration::from_secs(30));
     loop {
         timer.tick().await;
         if pool.is_closed() {
             return;
         }
-        if let Err(error) = tick(&pool).await {
+        let result = async {
+            let mut tx = pool.begin_with("BEGIN IMMEDIATE").await?;
+            if server {
+                advance_server(&mut tx, Utc::now()).await?;
+            } else {
+                advance(&mut tx, Utc::now()).await?;
+            }
+            tx.commit().await
+        }
+        .await;
+        if let Err(error) = result {
             tracing::error!("Scheduling failed: {error}");
         }
     }
@@ -181,7 +247,7 @@ pub(crate) async fn advance(
 ) -> Result<(), sqlx::Error> {
     // Connected desktops leave generation to the server; offline edits still remain local.
     let remote: Option<String> = sqlx::query_scalar(
-        "SELECT json_extract(state_json,'$.remote_url') FROM sync_client WHERE singleton=1",
+        "SELECT json_extract(state_json,'$.remote_url') FROM sync_client WHERE singleton=1 AND json_extract(state_json,'$.last_sync') IS NOT NULL AND COALESCE(json_extract(state_json,'$.suspended'),0)=0",
     )
     .fetch_optional(&mut *conn)
     .await?
@@ -189,6 +255,12 @@ pub(crate) async fn advance(
     if remote.is_some_and(|s| !s.is_empty()) {
         return Ok(());
     }
+    advance_server(conn, now).await
+}
+pub(crate) async fn advance_server(
+    conn: &mut SqliteConnection,
+    now: DateTime<Utc>,
+) -> Result<(), sqlx::Error> {
     let clock = read_clock(conn).await?;
     if clock.updated_at == Clock::default().updated_at {
         return Ok(());
@@ -203,7 +275,12 @@ pub(crate) async fn advance(
             .await?
             .into_iter()
             .collect();
-    let mut remaining = 100;
+    let records: i64 = sqlx::query_scalar("SELECT (SELECT COUNT(*) FROM tasks)+(SELECT COUNT(*) FROM projects)+(SELECT COUNT(*) FROM areas)+(SELECT COUNT(*) FROM tags)")
+        .fetch_one(&mut *conn).await?;
+    let mut remaining = 100.min((50_000 - records).max(0));
+    if remaining == 0 {
+        return Ok(());
+    }
     for (template, raw) in templates {
         let rule: RepeatRule =
             serde_json::from_str(&raw).map_err(|e| sqlx::Error::Decode(Box::new(e)))?;
@@ -212,26 +289,24 @@ pub(crate) async fn advance(
         if rule.paused {
             continue;
         }
-        // shortcut: scan the bounded date history; add an indexed cursor for large repeat archives.
-        for index in 0..100_000 {
-            let Some(day) = rule.occurrence(index) else {
-                break;
-            };
-            let Some(appears) = day.checked_sub_days(Days::new(rule.due_days.unwrap_or(0).into()))
-            else {
-                break;
-            };
-            if appears > today {
-                break;
-            }
-            let id = Uuid::new_v5(
-                &Uuid::NAMESPACE_URL,
-                format!("nextleaf:{template}:{}:{day}", rule.id).as_bytes(),
-            )
-            .to_string();
-            if existing.contains(&id) {
-                continue;
-            }
+        let pending = pending_days(&template, &rule, today, &existing);
+        if pending.len() > 100
+            && pending.last().is_some_and(|day| {
+                let appears = day
+                    .checked_sub_days(Days::new(rule.due_days.unwrap_or(0).into()))
+                    .unwrap();
+                rule.catch_up_through
+                    .as_deref()
+                    .is_none_or(|approved| appears.to_string().as_str() > approved)
+            })
+        {
+            // Pause visibly instead of generating an unconfirmed backlog over successive passes.
+            sqlx::query("UPDATE tasks SET recurrence=json_set(recurrence,'$.paused',json('true')),updated_at=? WHERE id=?")
+                .bind(now.to_rfc3339()).bind(&template).execute(&mut *conn).await?;
+            continue;
+        }
+        for day in pending {
+            let id = occurrence_id(&template, &rule.id, day);
             let result = sqlx::query("INSERT OR IGNORE INTO tasks(id,project_id,area_id,title,notes,status,sort_order,due_date,defer_until,completed_at,created_at,updated_at,starred,waiting_for,estimated_minutes,energy,recurrence) SELECT ?,project_id,area_id,title,notes,'next',(SELECT COALESCE(MAX(sort_order),0)+100 FROM tasks WHERE project_id IS source.project_id),?,NULL,NULL,?,?,1,waiting_for,estimated_minutes,energy,NULL FROM tasks source WHERE id=?")
                 .bind(&id).bind(rule.due_days.map(|_| day.to_string())).bind(now.to_rfc3339()).bind(now.to_rfc3339()).bind(&template).execute(&mut *conn).await?;
             if result.rows_affected() > 0 {
@@ -246,6 +321,62 @@ pub(crate) async fn advance(
     Ok(())
 }
 
+fn occurrence_id(template: &str, cycle: &str, day: NaiveDate) -> String {
+    Uuid::new_v5(
+        &Uuid::NAMESPACE_URL,
+        format!("nextleaf:{template}:{cycle}:{day}").as_bytes(),
+    )
+    .to_string()
+}
+fn pending_days(
+    template: &str,
+    rule: &RepeatRule,
+    today: NaiveDate,
+    existing: &std::collections::HashSet<String>,
+) -> Vec<NaiveDate> {
+    // shortcut: scan calendar history on worker/preview only; index a cursor if archives become slow.
+    (0..)
+        .map_while(|index| rule.occurrence(index))
+        .take_while(|day| {
+            day.checked_sub_days(Days::new(rule.due_days.unwrap_or(0).into()))
+                .is_some_and(|appears| appears <= today)
+        })
+        .filter(|day| !existing.contains(&occurrence_id(template, &rule.id, *day)))
+        .collect()
+}
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(super) struct PreviewInput {
+    template_id: String,
+    rule: RepeatRule,
+}
+pub(super) async fn preview(
+    State(state): State<AppState>,
+    Json(mut input): Json<PreviewInput>,
+) -> ApiResult<Value> {
+    input.rule.validate().map_err(bad_request)?;
+    let mut tx = state.pool.begin().await.map_err(internal)?;
+    if let Some(cycle) =
+        sqlx::query_scalar::<_, String>("SELECT rule_id FROM repeat_cycles WHERE template_id=?")
+            .bind(&input.template_id)
+            .fetch_optional(&mut *tx)
+            .await
+            .map_err(internal)?
+    {
+        input.rule.id = cycle;
+    }
+    let clock = read_clock(&mut tx).await.map_err(internal)?;
+    let today = clock.today(Utc::now());
+    let existing = sqlx::query_scalar::<_, String>("SELECT id FROM tasks")
+        .fetch_all(&mut *tx)
+        .await
+        .map_err(internal)?
+        .into_iter()
+        .collect();
+    let count = pending_days(&input.template_id, &input.rule, today, &existing).len();
+    Ok(Json(json!({"count": count, "through": today.to_string()})))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -258,6 +389,7 @@ mod tests {
             until: None,
             due_days: None,
             paused: false,
+            catch_up_through: None,
         }
     }
     fn instant(s: &str) -> DateTime<Utc> {
@@ -475,7 +607,7 @@ mod tests {
         )
         .await;
         sqlx::query("INSERT INTO sync_client VALUES(1,?)")
-            .bind(r#"{"remote_url":"https://example.invalid"}"#)
+            .bind(r#"{"remote_url":"https://example.invalid","last_sync":"2026-10-19T00:00:00Z"}"#)
             .execute(&p)
             .await
             .unwrap();
@@ -493,6 +625,101 @@ mod tests {
                 .await
                 .unwrap(),
             "scheduled"
+        );
+    }
+
+    #[tokio::test]
+    async fn large_backlogs_wait_for_explicit_approval_then_generate_every_copy_once() {
+        let p = pool().await;
+        zone(&p, "UTC").await;
+        let repeat = rule("2026-01-01", "daily");
+        insert(&p, "backlog", "recurring", None, Some(repeat.clone())).await;
+        for _ in 0..4 {
+            advance_at(&p, "2026-10-19T12:00:00Z").await;
+        }
+        assert_eq!(
+            sqlx::query_scalar::<_, i64>("SELECT COUNT(*) FROM tasks")
+                .fetch_one(&p)
+                .await
+                .unwrap(),
+            1
+        );
+        let mut paused: sqlx::types::Json<RepeatRule> =
+            sqlx::query_scalar("SELECT recurrence FROM tasks WHERE id='backlog'")
+                .fetch_one(&p)
+                .await
+                .unwrap();
+        assert!(paused.paused);
+        paused.paused = false;
+        paused.catch_up_through = Some("2026-10-19".into());
+        sqlx::query("UPDATE tasks SET recurrence=? WHERE id='backlog'")
+            .bind(paused)
+            .execute(&p)
+            .await
+            .unwrap();
+        advance_at(&p, "2026-10-19T12:00:00Z").await;
+        assert_eq!(
+            sqlx::query_scalar::<_, i64>("SELECT COUNT(*) FROM tasks")
+                .fetch_one(&p)
+                .await
+                .unwrap(),
+            101
+        );
+        for _ in 0..4 {
+            advance_at(&p, "2026-10-19T12:00:00Z").await;
+        }
+        assert_eq!(
+            sqlx::query_scalar::<_, i64>("SELECT COUNT(*) FROM tasks")
+                .fetch_one(&p)
+                .await
+                .unwrap(),
+            293
+        );
+        advance_at(&p, "2027-10-19T12:00:00Z").await;
+        assert_eq!(
+            sqlx::query_scalar::<_, i64>("SELECT COUNT(*) FROM tasks")
+                .fetch_one(&p)
+                .await
+                .unwrap(),
+            293
+        );
+    }
+    #[tokio::test]
+    async fn tentative_connection_does_not_disable_scheduling_and_server_ignores_client_metadata() {
+        let p = pool().await;
+        zone(&p, "UTC").await;
+        insert(&p, "due", "scheduled", Some("2026-10-19"), None).await;
+        sqlx::query("INSERT INTO sync_client VALUES(1,?)")
+            .bind(r#"{"remote_url":"https://wrong.invalid"}"#)
+            .execute(&p)
+            .await
+            .unwrap();
+        advance_at(&p, "2026-10-19T12:00:00Z").await;
+        assert_eq!(
+            sqlx::query_scalar::<_, String>("SELECT status FROM tasks WHERE id='due'")
+                .fetch_one(&p)
+                .await
+                .unwrap(),
+            "next"
+        );
+        insert(&p, "server-due", "scheduled", Some("2026-10-19"), None).await;
+        sqlx::query("UPDATE sync_client SET state_json=?")
+            .bind(r#"{"remote_url":"https://wrong.invalid","last_sync":"2026-10-19"}"#)
+            .execute(&p)
+            .await
+            .unwrap();
+        advance_server(
+            &mut *p.acquire().await.unwrap(),
+            instant("2026-10-19T12:00:00Z"),
+        )
+        .await
+        .unwrap();
+        assert_eq!(
+            sqlx::query_scalar::<_, String>("SELECT status FROM tasks WHERE id='server-due'")
+                .fetch_one(&p)
+                .await
+                .unwrap(),
+            "next"
         );
     }
 }

@@ -5,7 +5,7 @@ import './DesktopConnection.css';
 import Dialog from './Dialog';
 
 type Conflict = { entity: string; id: string; field: string; local: unknown; server: unknown };
-type SyncStatus = { initialized: boolean; pending: boolean; conflicts: Conflict[]; error: string | null; last_sync: string | null; remote_url: string | null };
+type SyncStatus = { suspended: boolean; initialized: boolean; pending: boolean; conflicts: Conflict[]; error: string | null; last_sync: string | null; remote_url: string | null };
 type DesktopInfo = { data_directory: string; mcp_command: string; mcp_args: string[] };
 export default function DesktopConnection({ onChanged }: { onChanged: () => void }) {
   const [status, setStatus] = useState<SyncStatus | null>(null);
@@ -50,14 +50,15 @@ export default function DesktopConnection({ onChanged }: { onChanged: () => void
     <p>Your tasks are saved on this computer. Connect to your server to sync changes.</p>
     <form onSubmit={event => { event.preventDefault(); void run('desktop_sync', { remote: remote.trim() }); }}>
       <input aria-label="Sync server URL" type="url" placeholder="https://your-server" value={remote} disabled={busy || status?.initialized} onChange={event => setRemote(event.target.value)}/>
-      <button disabled={busy || !remote.trim()}>{busy ? 'Syncing…' : status?.initialized ? 'Sync now' : 'Connect and sync'}</button>
+      <button disabled={busy || !remote.trim()}>{busy ? 'Syncing…' : status?.suspended ? 'Reconnect and sync' : status?.initialized ? 'Sync now' : 'Connect and sync'}</button>
     </form>
-    <p role="status">{status?.conflicts.length ? 'Changes need your attention.' : status?.error ? 'Server unavailable. You can keep working locally.' : status?.pending ? 'Local changes are waiting to sync.' : status?.initialized ? 'Changes are synced.' : 'Working locally. Server sync is not connected.'}</p>
+    {status?.initialized && !status.suspended && <button disabled={busy} onClick={() => void run('desktop_disconnect', {})}>Disconnect</button>}
+    <p role="status">{status?.suspended ? 'Disconnected. Working locally; reconnect to the same server to sync again.' : status?.conflicts.length ? 'Changes need your attention.' : status?.error ? 'Server unavailable. You can keep working locally.' : status?.pending ? 'Local changes are waiting to sync.' : status?.initialized ? 'Changes are synced.' : 'Working locally. Server sync is not connected.'}</p>
     {status?.last_sync && <p>Last sync: {new Date(status.last_sync).toLocaleString()}</p>}
     {(error || status?.error) && <p className="connectionerror" role="alert">{error || status?.error}</p>}
     {!!status?.conflicts.length && <div className="syncconflicts">
       <p>Both this computer and the server changed the same data. Review the values before choosing which version to keep for these conflicts.</p>
-      {status.conflicts.map((conflict, index) => <details key={index}><summary>{names[`${conflict.entity}:${conflict.id}`] ?? conflict.id} — {conflict.field}</summary><dl><dt>On this computer</dt><dd>{JSON.stringify(conflict.local)}</dd><dt>On the server</dt><dd>{JSON.stringify(conflict.server)}</dd></dl></details>)}
+      {status.conflicts.map((conflict, index) => <details key={index}><summary>{names[`${conflict.entity}:${conflict.id}`] ?? conflict.id} — {conflict.field}</summary><dl><dt>On this computer</dt><dd>{JSON.stringify(conflict.local)}</dd><dt>On the server</dt><dd>{JSON.stringify(conflict.server)}</dd></dl><button disabled={busy} onClick={() => void run('desktop_resolve', { choice: 'local', selected: conflict })}>Keep this local value</button><button disabled={busy} onClick={() => void run('desktop_resolve', { choice: 'server', selected: conflict })}>Keep this server value</button></details>)}
       <button disabled={busy} onClick={() => setResolution('local')}>Keep local values</button>
       <button disabled={busy} onClick={() => setResolution('server')}>Keep server values</button>
     </div>}
@@ -84,6 +85,6 @@ export function DesktopSyncIndicator({ onOpen }: { onOpen: () => void }) {
     window.addEventListener('nextleaf-data-changed', read);
     return () => { active = false; clearInterval(timer); window.removeEventListener('nextleaf-data-changed', read); };
   }, []);
-  const text = status?.conflicts.length ? 'Sync conflicts' : status?.error ? 'Offline' : status?.pending ? 'Sync pending' : status?.initialized ? 'Synced' : 'Local only';
+  const text = status?.suspended ? 'Local only' : status?.conflicts.length ? 'Sync conflicts' : status?.error ? 'Offline' : status?.pending ? 'Sync pending' : status?.initialized ? 'Synced' : 'Local only';
   return <button className="syncindicator" onClick={onOpen} aria-label={`Sync status: ${text}. Open settings.`}>{text}</button>;
 }

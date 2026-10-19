@@ -1,6 +1,6 @@
-import { useId, useLayoutEffect, useRef, useState, type KeyboardEvent } from 'react';
+import { useEffect, useId, useLayoutEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { createPortal } from 'react-dom';
-import type { Task } from './api';
+import { api, type Task } from './api';
 import type { TaskChanges } from './taskEdit';
 import DateField from './DateField';
 import Dialog from './Dialog';
@@ -56,7 +56,7 @@ export default function StateField({ task, people, disabled, onChange, menu = fa
       buttons[event.key === 'Home' ? 0 : event.key === 'End' ? buttons.length - 1 : (index + (event.key === 'ArrowDown' ? 1 : -1) + buttons.length) % buttons.length]?.focus();
     }
   }
-  function openPicker(kind: 'date' | 'repeat') { pickerTask.current = task; pickerSave.current = onChange; setPicker(kind); panel.current?.hidePopover(); }
+  function openPicker(kind: 'date' | 'repeat', resume = false) { pickerTask.current = resume && task.recurrence ? { ...task, recurrence: { ...task.recurrence, paused: false } } : task; pickerSave.current = onChange; setPicker(kind); panel.current?.hidePopover(); }
   return <>
     <button ref={trigger} type="button" className={menu ? '' : 'datefield dropdownfield statefield'} role={menu ? 'menuitem' : undefined} aria-label={menu ? 'State' : `State: ${stateLabel(task)}`} title={menu ? undefined : stateLabel(task)} aria-haspopup="menu" popoverTarget={id} disabled={disabled || pending}
       onClick={event => { event.stopPropagation(); const rect = event.currentTarget.getBoundingClientRect(); const element = panel.current!; element.style.left = `${Math.max(8, Math.min(rect.right - 220, window.innerWidth - 228))}px`; element.style.top = `${Math.max(8, Math.min(rect.bottom + 4, window.innerHeight - 360))}px`; setError(''); }}>
@@ -81,11 +81,13 @@ export default function StateField({ task, people, disabled, onChange, menu = fa
         {branch === 'Scheduled' ? <>
           <button type="button" role="menuitem" disabled={pending} onClick={() => openPicker('date')}>Start Date…</button>
           <button type="button" role="menuitem" disabled={pending} onClick={() => openPicker('repeat')}>{task.recurrence ? 'Edit Repeating…' : 'Make Repeating…'}</button>
-          {task.recurrence && <button type="button" role="menuitem" disabled={pending} onClick={() => void choose(repeatChange({ ...task.recurrence!, paused: !task.recurrence!.paused }))}>{task.recurrence.paused ? 'Resume Repeating' : 'Pause Repeating'}</button>}
+          {task.recurrence && <button type="button" role="menuitem" disabled={pending} onClick={() => task.recurrence!.paused ? openPicker('repeat', true) : void choose(repeatChange({ ...task.recurrence!, paused: true }))}>{task.recurrence.paused ? 'Resume Repeating' : 'Pause Repeating'}</button>}
           {task.status === 'recurring' && <button type="button" role="menuitem" disabled={pending} onClick={() => void choose(stateChange('next'))}>Stop Repeating</button>}
         </> : <>
           {[...new Set([...people, ...(task.waiting_for ? [task.waiting_for] : [])])].map(person => <button type="button" role="menuitem" key={person} disabled={pending} onClick={() => void choose(waitingChange(person))}>{person}</button>)}
-          <input aria-label="Waiting for" placeholder="Contact or name" value={contact} disabled={pending} onChange={event => setContact(event.target.value)} onKeyDown={event => { if (event.key === 'Enter') { event.preventDefault(); void choose(waitingChange(contact)); } }}/>
+          <input aria-label="Waiting for" placeholder="Contact or name" value={contact} disabled={pending} onChange={event => setContact(event.target.value)} onBlur={event => {
+            if (contact.trim() && !panel.current?.contains(event.relatedTarget as Node | null)) void choose(waitingChange(contact));
+          }} onKeyDown={event => { if (event.key === 'Enter') { event.preventDefault(); void choose(waitingChange(contact)); } }}/>
           <button type="button" role="menuitem" disabled={pending} onClick={() => void choose(waitingChange(contact))}>Use contact</button>
           <button type="button" role="menuitem" disabled={pending} onClick={() => void choose(waitingChange(null))}>Without contact</button>
         </>}
@@ -94,16 +96,28 @@ export default function StateField({ task, people, disabled, onChange, menu = fa
       {error && !branch && <p role="alert" className="error">{error}</p>}
     </div>
     {picker === 'date' && <DateField label="Start Date" value={pickerTask.current.defer_until} disabled={disabled} initialAnchor={trigger.current?.getBoundingClientRect()} onClose={() => setPicker(null)} onChange={date => choose(scheduleChange(date), true)}/>}
-    {picker === 'repeat' && createPortal(<RepeatDialog initialStart={pickerTask.current.defer_until?.slice(0, 10)} rule={pickerTask.current.recurrence} disabled={disabled} onClose={() => setPicker(null)} onSave={async rule => { if (await choose(repeatChange(rule), true)) setPicker(null); else throw new Error('Could not save. Please try again.'); }}/>, document.body)}
+    {picker === 'repeat' && createPortal(<RepeatDialog templateId={task.id} initialStart={pickerTask.current.defer_until?.slice(0, 10)} rule={pickerTask.current.recurrence} disabled={disabled} onClose={() => setPicker(null)} onSave={async rule => { if (await choose(repeatChange(rule), true)) setPicker(null); else throw new Error('Could not save. Please try again.'); }}/>, document.body)}
   </>;
 }
 
-function RepeatDialog({ rule, initialStart, disabled, onClose, onSave }: { initialStart?: string; rule: RepeatRule | null; disabled: boolean; onClose: () => void; onSave: (rule: RepeatRule) => Promise<void> }) {
+function RepeatDialog({ templateId, rule, initialStart, disabled, onClose, onSave }: { templateId: string; initialStart?: string; rule: RepeatRule | null; disabled: boolean; onClose: () => void; onSave: (rule: RepeatRule) => Promise<void> }) {
   const [draft, setDraft] = useState<RepeatRule>(() => rule ?? { id: crypto.randomUUID(), frequency: 'daily', interval: 1, start: initialStart ?? dateKey(new Date()), until: null, due_days: null, paused: false });
   const [pending, setPending] = useState(false);
   const [error, setError] = useState('');
+  const [backlog, setBacklog] = useState<{ count: number; through: string } | null>(null);
+  const [approved, setApproved] = useState(false);
+  useEffect(() => {
+    let active = true;
+    setBacklog(null); setApproved(false); setError('');
+    void api.repeatBacklog(templateId, draft).then(value => { if (active) setBacklog(value); }).catch(e => { if (active) setError(String(e)); });
+    return () => { active = false; };
+  }, [templateId, draft]);
+  const needsApproval = !!backlog && backlog.count > 100 && !draft.paused;
   return <Dialog title="Repeat" onClose={() => { if (!pending) onClose(); }}>
-    <form className="repeatform" onSubmit={async event => { event.preventDefault(); if (pending || disabled) return; if (draft.until && draft.until < draft.start) { setError('The end date cannot precede the start date.'); return; } setPending(true); setError(''); try { await onSave(draft); } catch (e) { setError(String(e)); } finally { setPending(false); } }}>
+    <form className="repeatform" onSubmit={async event => { event.preventDefault(); if (pending || disabled || !backlog || (needsApproval && !approved)) return; if (draft.until && draft.until < draft.start) { setError('The end date cannot precede the start date.'); return; } setPending(true); setError(''); try { await onSave({ ...draft, catch_up_through: needsApproval && approved ? backlog.through : null }); } catch (e) { setError(String(e)); } finally { setPending(false); } }}>
+      {backlog && backlog.count > 0 && <p>{backlog.count} missed copies are waiting to be generated.</p>}
+      {needsApproval && <label className="repeatcheck"><input type="checkbox" checked={approved} onChange={event => setApproved(event.target.checked)}/>Generate all {backlog!.count} missed copies through {backlog!.through}, in batches of 100.</label>}
+      <label className="repeatcheck"><input type="checkbox" checked={draft.paused} onChange={event => setDraft({ ...draft, paused: event.target.checked })}/>Paused</label>
       <label>Repeat<select aria-label="Repeat" disabled={pending} value={draft.frequency} onChange={event => setDraft({ ...draft, frequency: event.target.value as RepeatRule['frequency'] })}>{['daily', 'weekly', 'monthly', 'yearly'].map(value => <option key={value}>{value}</option>)}</select></label>
       <label>Every<input aria-label="Repeat interval" type="number" min="1" max="1000" required disabled={pending} value={draft.interval} onChange={event => setDraft({ ...draft, interval: Number(event.target.value) })}/></label>
       <label>First scheduled date<DateField label="First scheduled date" value={draft.start} disabled={pending} onChange={start => { if (start) setDraft({ ...draft, start }); }}/></label>
@@ -113,7 +127,7 @@ function RepeatDialog({ rule, initialStart, disabled, onClose, onSave }: { initi
       <label className="repeatcheck"><input type="checkbox" checked={draft.due_days !== null} disabled={pending} onChange={event => setDraft({ ...draft, due_days: event.target.checked ? 0 : null })}/>Each copy has a due date</label>
       {draft.due_days !== null && <label>Show in Focus this many days before due<input aria-label="Days before due" type="number" min="0" max="365" required disabled={pending} value={draft.due_days} onChange={event => setDraft({ ...draft, due_days: Number(event.target.value) })}/></label>}
       {error && <p role="alert" className="error">{error}</p>}
-      <div className="dialogactions"><button type="button" disabled={pending} onClick={onClose}>Cancel</button><button className="primary" disabled={pending || disabled}>Apply</button></div>
+      <div className="dialogactions"><button type="button" disabled={pending} onClick={onClose}>Cancel</button><button className="primary" disabled={pending || disabled || !backlog || (needsApproval && !approved)}>Apply</button></div>
     </form>
   </Dialog>;
 }
