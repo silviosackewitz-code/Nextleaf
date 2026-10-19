@@ -1,11 +1,40 @@
 # Current status and next steps
 
-## 0.1.3 release preparation — 2026-10-19
+## 0.1.3 release — 2026-10-19
 
-The owner authorized commit, push, publication and installation as version 0.1.3.
-The release includes the reviewed repairs below, sync protocol 4 and mandatory
-HTTP host configuration. Packaging, public container checks and the backed-up
-server-first installation are in progress; completion is recorded separately.
+[Nextleaf v0.1.3](https://github.com/silviosackewitz-code/Nextleaf/releases/tag/v0.1.3)
+is published from `37467ff`, with an Apple Silicon DMG, native ARM64/AMD64 server
+images, corresponding source, deployment files, license notices and checksums.
+The owner authorized commit/push, publication and installation, and confirmed the
+Pi SSH username `dersack`, now recorded in AGENTS.md.
+
+Verification:
+
+- 52 backend tests, including both real HTTP sync tests, and 45 frontend tests pass.
+  TypeScript/Vite and the native Mac release build pass.
+- The final mounted DMG passes image integrity and strict deep ad-hoc signature
+  checks. Its executable upgraded an isolated copy of the existing 0.1.2 database
+  to protocol 4, preserving entity identities, content, relationships, import
+  receipts and client/server binding. SQLite integrity and foreign keys are valid.
+  One legacy direct task Area was cleared with its original value retained in the
+  audit table; no dates needed normalization in this copy.
+- Native UI/CSP loading was verified against isolated data with sync suspended.
+  An intentionally invalid test database produced the visible startup error and
+  remained unchanged.
+- Both [native container jobs](https://github.com/silviosackewitz-code/Nextleaf/actions/runs/39258519254)
+  passed fresh Compose/API/MCP checks, repeat generation, recreation persistence
+  and upgrades from published 0.1.2, then published the multi-architecture image.
+
+- [Anonymous public installation](https://github.com/silviosackewitz-code/Nextleaf/actions/runs/39259487986)
+  passed on both architectures. All eight payloads were independently downloaded
+  without authentication and matched SHA256SUMS.
+
+Installation follows a server-first sequence with consistent backups and HTTP
+hostname configuration. Completion is recorded below after live verification.
+No physical iPhone/Safari keyboard test, other desktop packaging, tailnet policy
+audit or complete production restore rehearsal is claimed. Developer ID and
+notarization remain unavailable; automatic rollback detection and Docker digest
+maintenance remain open.
 
 
 ## 2026-10-19 Inbox review repairs — source verified, not released
