@@ -50,6 +50,45 @@ Protocol 3 carries tag identity, repeat rules, and the active timezone. Old sync
 rejected rather than silently losing that data. Do not downgrade a migrated
 SQLite database in place. Reverting the image alone is not a database rollback.
 
+## Update from 0.1.1 to 0.1.2
+
+This is a shared UI update for the native Mac app and server-hosted iPhone view.
+The database schema and sync protocol remain unchanged at protocol 3. Version
+compatibility is checked by the validated sync format and stored server identity;
+patch releases do not need identical app version strings to exchange compatible data.
+Keep your existing configuration, tasks, and local import receipts.
+
+1. Quit the Mac app, close the iPhone view, and make consistent server and local
+   desktop backups as described below.
+2. Open the existing Pi configuration with `sudo nano /opt/nextleaf-app/.env` and
+   change only its image line:
+
+```dotenv
+TASKMANAGER_IMAGE=ghcr.io/silviosackewitz-code/nextleaf:0.1.2
+```
+
+3. Validate, pull, and replace the server container:
+
+```bash
+sudo docker compose --env-file /opt/nextleaf-app/.env -f /opt/nextleaf-app/docker-compose.yml config --quiet &&
+sudo docker compose --env-file /opt/nextleaf-app/.env -f /opt/nextleaf-app/docker-compose.yml pull &&
+sudo docker compose --env-file /opt/nextleaf-app/.env -f /opt/nextleaf-app/docker-compose.yml up -d --wait
+curl --fail --show-error http://127.0.0.1:8787/api/health
+```
+
+4. Download `Nextleaf-0.1.2-macOS-Apple-Silicon.dmg` from the
+   [0.1.2 release](https://github.com/silviosackewitz-code/Nextleaf/releases/tag/v0.1.2),
+   verify its checksum, then drag Nextleaf into Applications and choose Replace.
+   Preserve `~/Library/Application Support/dev.taskmanager.desktop/`.
+5. Open the installed Mac app and reload the iPhone page. Check existing tasks,
+   bidirectional sync, note/metadata alignment, the Focus control, and
+   **State → Scheduled → Start Date…**. The State field should show a calendar icon,
+   one chevron, and a compact date such as `Scheduled: Oct 19, 2026`.
+
+No uninstall or Nirvana reimport is needed. The Mac remains an ad-hoc-signed,
+non-notarized test package. Windows/Intel Mac/Linux desktop installers are not
+included; ARM64 and AMD64 Linux server containers are included.
+
 ## Update from 0.1.0 to 0.1.1
 
 This release migrates sync protocol 2 to 3. Update the server first, then replace

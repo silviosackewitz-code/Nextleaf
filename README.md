@@ -13,13 +13,13 @@ install the native macOS client from a DMG and use Safari on iPhone.
 
 Nextleaf is open source under the **GNU GPL v3.0**.
 
-Already installed? Follow [Update from 0.1.0 to 0.1.1](docs/DEPLOYMENT.md#update-from-010-to-011).
+Already installed? Follow [Update from 0.1.1 to 0.1.2](docs/DEPLOYMENT.md#update-from-011-to-012).
 The server container and Mac app are replaced while your data stays in place.
 
 ## Install Nextleaf
 
 Start with the Linux server, then install the Mac app, then open Nextleaf on iPhone.
-The commands below are for a **fresh installation** of application 0.1.1. The release is an **installation-test prerelease**.
+The commands below are for a **fresh installation** of application 0.1.2. The release is an **installation-test prerelease**.
 For removal, updates, backups, and detailed verification, use the
 [complete installation guide](docs/INSTALLATION.md).
 
@@ -34,11 +34,11 @@ Run each block on your server, in order. Stop if any command fails.
 **Download and verify the installation files:**
 
 ```bash
-mkdir -p ~/nextleaf-install-0.1.1 &&
-cd ~/nextleaf-install-0.1.1 &&
-wget --https-only -O docker-compose.yml https://github.com/silviosackewitz-code/Nextleaf/releases/download/v0.1.1/docker-compose.yml &&
-wget --https-only -O example.env https://github.com/silviosackewitz-code/Nextleaf/releases/download/v0.1.1/example.env &&
-wget --https-only -O SHA256SUMS https://github.com/silviosackewitz-code/Nextleaf/releases/download/v0.1.1/SHA256SUMS &&
+mkdir -p ~/nextleaf-install-0.1.2 &&
+cd ~/nextleaf-install-0.1.2 &&
+wget --https-only -O docker-compose.yml https://github.com/silviosackewitz-code/Nextleaf/releases/download/v0.1.2/docker-compose.yml &&
+wget --https-only -O example.env https://github.com/silviosackewitz-code/Nextleaf/releases/download/v0.1.2/example.env &&
+wget --https-only -O SHA256SUMS https://github.com/silviosackewitz-code/Nextleaf/releases/download/v0.1.2/SHA256SUMS &&
 sha256sum --check --ignore-missing SHA256SUMS
 ```
 
@@ -47,7 +47,7 @@ Continue only when both `docker-compose.yml` and `example.env` report **OK**.
 **Create the configuration and empty data directories:**
 
 ```bash
-cd ~/nextleaf-install-0.1.1 &&
+cd ~/nextleaf-install-0.1.2 &&
 sudo install -d -m 0750 /opt/nextleaf-app &&
 sudo install -m 0640 docker-compose.yml /opt/nextleaf-app/docker-compose.yml &&
 sudo install -m 0600 example.env /opt/nextleaf-app/.env &&
@@ -106,14 +106,14 @@ Mac synchronization do not depend on it.
 ### 2. Mac: download the macOS installer
 
 **Choose “Nextleaf for macOS — Apple Silicon (M-series) — DMG installer” under
-Releases → Nextleaf 0.1.1 — Scheduling and Contacts → Assets.**
+Releases → Nextleaf 0.1.2 — UI refinements → Assets.**
 
-The downloaded filename is `Nextleaf-0.1.1-macOS-Apple-Silicon.dmg`.
+The downloaded filename is `Nextleaf-0.1.2-macOS-Apple-Silicon.dmg`.
 It is for **macOS on Apple Silicon (M-series)**.
 
 | Your Mac, shown under Apple menu → About This Mac | Download |
 | --- | --- |
-| **Chip: Apple M…** (Apple Silicon / M-series) | `Nextleaf-0.1.1-macOS-Apple-Silicon.dmg` |
+| **Chip: Apple M…** (Apple Silicon / M-series) | `Nextleaf-0.1.2-macOS-Apple-Silicon.dmg` |
 | **Processor: Intel…** | No compatible installer in this release |
 
 On this repository's **Code** page, find **Releases** in the sidebar, open the
@@ -170,7 +170,7 @@ offline phone editing, and automatic desktop updates are not part of this releas
 | `/srv/nextleaf/` | Persistent SQLite task database | Consistent copy of the entire folder |
 
 The [installation guide](docs/INSTALLATION.md) sets these paths explicitly for
-release 0.1.1. The environment template already contains
+release 0.1.2. The environment template already contains
 these defaults. Docker images can be downloaded again. See the
 [backup instructions](docs/DEPLOYMENT.md#consistent-backup-and-restore) before
 copying a running database. For a clean restart, follow the
@@ -196,6 +196,11 @@ identify what needs fixing. [Open an issue](https://github.com/silviosackewitz-c
 with your OS, device architecture, Nextleaf version, reproduction steps, and the
 expected and actual result. Remove tokens, private task content, and other secrets
 from logs or screenshots before posting.
+
+Want to help without writing code? Try one device and share your result:
+
+- [UI testing on Mac and iPhone](https://github.com/silviosackewitz-code/Nextleaf/issues/1)
+- [Installation testing](https://github.com/silviosackewitz-code/Nextleaf/issues/2)
 
 ## Develop
 

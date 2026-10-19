@@ -4,7 +4,7 @@ Updated: 2026-10-18. Historical duplicate status notes have been consolidated;
 requirements and reasons remain in SPECIFICATION and DECISIONS, with original
 history available in Git.
 
-## Layout refinement after 0.1.1 feedback — source verified, not released
+## UI refinement release 0.1.2 — in preparation
 
 The owner rejected the duplicated State chevron, wrapping scheduled ISO date and
 uneven notes/tag alignment, and asked for a more spacious list. The source now
@@ -18,9 +18,9 @@ notes, calendar selection and saving, plus the new Focus control. At 390px and
 320px, the complete scheduled label and icon fit; the 320px control remained
 46px high with no page overflow. These are browser checks with synthetic data,
 not physical iPhone or native Mac acceptance. Screenshots stay outside the repo.
-The installed Mac and Pi still run published 0.1.1; no replacement artifacts have
-been produced for this refinement. Continue owner scheduling acceptance after
-shipping the agreed UI update.
+The owner chose version 0.1.2 and plans to install it on the following day.
+Release packages are being prepared; the installed Mac and Pi remain on 0.1.1.
+Continue owner scheduling acceptance after shipping the agreed UI update.
 
 ## Scheduling and Contacts update 0.1.1 — owner update and sync accepted
 
