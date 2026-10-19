@@ -29,15 +29,28 @@ Verification:
   passed on both architectures. All eight payloads were independently downloaded
   without authentication and matched SHA256SUMS.
 
-Installation follows a server-first sequence with consistent backups and HTTP
-hostname configuration. Completion is recorded below after live verification.
+The owner installation completed on 2026-10-19, server first and then Mac.
+The Pi updater preserves a stopped-service data/config backup under
+`/var/backups/nextleaf/`; the previous Mac bundle and consistent desktop database
+were backed up separately before replacement. The server now serves the exact
+0.1.3 web build through private HTTPS, with protocol 4 and the configured HTTP
+hostname allowlist. Server identity and existing records are retained; the one
+legacy direct task Area is normalized as expected.
+
+The installed `/Applications/Nextleaf.app` reports 0.1.3 and passes strict deep
+signature verification. Native startup and an explicit Sync now completed; the
+UI reports "Changes are synced". Its protocol-4 baseline exactly matches the
+server snapshot, with no sync errors or conflicts. Live SQLite integrity and
+foreign keys pass. Existing task/project/Area/tag content, relations and Nirvana
+import receipts match the pre-install backup, aside from the audited Area repair.
+The owner also confirmed that the server is running again.
 No physical iPhone/Safari keyboard test, other desktop packaging, tailnet policy
 audit or complete production restore rehearsal is claimed. Developer ID and
 notarization remain unavailable; automatic rollback detection and Docker digest
 maintenance remain open.
 
 
-## 2026-10-19 Inbox review repairs — source verified, not released
+## Historical source-repair phase — 2026-10-19
 
 Verified and repaired the Inbox findings; see [the item-by-item resolution](REVIEW_RESOLUTION.md).
 The owner chose all missed repeats with confirmation above 100 copies. Protocol 4
@@ -48,7 +61,8 @@ checks passed. Migration/audit and protocol-3 upgrade tests passed with syntheti
 
 Before a release: back up both replicas, configure the HTTP hostname allowlist,
 update server before desktops, and test packaging/CSP, actual devices and Compose.
-No deployed data, application, release or Git commit was changed. Restore rollback
+At the end of that source-only phase, no deployed data, application, release or
+Git commit had changed. The later 0.1.3 installation is recorded above. Restore rollback
 is mitigated by mandatory identity rotation; automatic rollback detection and
 Docker digest maintenance remain open. No full restore rehearsal was performed.
 
