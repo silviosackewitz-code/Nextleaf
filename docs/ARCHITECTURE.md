@@ -92,7 +92,9 @@ focus containment and dismissal. Desktop titles open accessible inline editors;
 Save/Cancel/Escape restore focus. TaskFields and TagEditor share form behavior.
 The primary fields are Time, Energy, Due, State, and Project; additional fields
 are reached through State → Scheduled or State → Waiting. The shared StateField
-serves both draft editing and immediate row actions, with atomic date/state patches. Unsaved drafts require an explicit discard choice.
+serves both draft editing and immediate row actions, with atomic date/state patches. Its property
+trigger reuses the shared CSS chevron, adds a decorative state/calendar icon, and
+formats date-only labels in an explicit UTC formatter to avoid timezone shifts. Unsaved drafts require an explicit discard choice.
 
 Quick actions share values with the editor and issue minimal PATCH requests.
 Desktop submenus open to the left, clamp to the viewport, and use controlled
@@ -103,6 +105,8 @@ Date controls share a month calendar and preserve date-only values.
 
 Tag text becomes a tag only on Enter or explicit suggestion selection. Blur/Tab/
 Save do not create unfinished tags. Project-inherited Area cannot be overridden.
+Desktop task rows reserve checkbox/Focus/menu positions and keep note icons beside
+the title; metadata tags are plain text while form tags remain editable chips.
 Task rows have separate title/metadata regions, optional notes, modest counters,
 and transient completion display. Project grouping and display limits never
 change backend availability. Filter/count/overview behavior agrees on Untagged,

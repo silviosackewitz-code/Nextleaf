@@ -234,3 +234,18 @@ for IANA/DST rules, rather than implementing timezone calculations ourselves.
 Protocol 3 deliberately rejects old peers before writes; update the server first,
 then the desktop, preserving data and local import receipts. The owner also asked
 to test this normal update path, without uninstalling the working installation.
+
+## 2026-10-18: single State indicator and compact scheduled date
+
+The owner identified a duplicated State chevron and a wrapping ISO date, then
+supplied a reference with a calendar icon and `Scheduled: Oct 20, 2026`. Reuse the
+existing CSS dropdown chevron instead of rendering a second text arrow. Add a
+small decorative calendar icon, format the date in English without changing the
+stored value, and give the desktop property column enough room for the label.
+Preserve menu behavior and show the full value to assistive tools and in a tooltip.
+
+The owner also rejected uneven metadata caused by an inline notes marker and
+asked for a calmer, more spacious list, supplying a Nirvana reference. Keep the
+existing light palette, reserve the Focus column, put a small note icon beside the
+title, and use plain desktop metadata tags with more row spacing. Preserve phone
+touch targets and form tag chips; no theme or drag-and-drop feature is implied.

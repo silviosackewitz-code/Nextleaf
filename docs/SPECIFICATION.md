@@ -51,6 +51,11 @@ keyboard, and touch must all reach these choices; touch uses an inline Back acti
 Save changes and Cancel are explicit. Protect unsaved drafts from silent loss;
 return focus to the title on close. Preserve error messages and edits on failed saves.
 
+Desktop rows reserve fixed positions for checkbox, Focus star and action menu.
+Keep note indicators beside their title, and use quiet text tags in row metadata
+while retaining editable chips in forms. Use comfortable row spacing and the
+available window width; note presence must not shift metadata alignment.
+
 Compact rows use separate title and metadata areas with up to two visible lines;
 full titles remain available in the editor. Notes have off, preview, and full modes.
 Focus is yellow. Overdue open tasks use only a red completion-circle border.
@@ -68,6 +73,10 @@ must not silently turn unfinished text into a new tag. Support keyboard suggesti
 navigation and removing chips. Area appears as a distinct chip; project-inherited
 Area cannot be overridden on the task. Archived links stay visible but archived
 entries are not offered for new assignments.
+
+The State property shows a left icon and one dropdown chevron. Scheduled dates
+use a compact English label such as `Scheduled: Oct 19, 2026`, on one line in the
+standard editor; long contact labels may truncate with the full value accessible.
 
 Dates retain `YYYY-MM-DD` precision without invented times. The shared month
 calendar updates a form draft, or saves immediately from quick actions; support

@@ -58,9 +58,12 @@ export default function StateField({ task, people, disabled, onChange, menu = fa
   }
   function openPicker(kind: 'date' | 'repeat') { pickerTask.current = task; pickerSave.current = onChange; setPicker(kind); panel.current?.hidePopover(); }
   return <>
-    <button ref={trigger} type="button" className={menu ? '' : 'datefield dropdownfield statefield'} role={menu ? 'menuitem' : undefined} aria-label="State" aria-haspopup="menu" popoverTarget={id} disabled={disabled || pending}
+    <button ref={trigger} type="button" className={menu ? '' : 'datefield dropdownfield statefield'} role={menu ? 'menuitem' : undefined} aria-label={menu ? 'State' : `State: ${stateLabel(task)}`} title={menu ? undefined : stateLabel(task)} aria-haspopup="menu" popoverTarget={id} disabled={disabled || pending}
       onClick={event => { event.stopPropagation(); const rect = event.currentTarget.getBoundingClientRect(); const element = panel.current!; element.style.left = `${Math.max(8, Math.min(rect.right - 220, window.innerWidth - 228))}px`; element.style.top = `${Math.max(8, Math.min(rect.bottom + 4, window.innerHeight - 360))}px`; setError(''); }}>
-      {menu ? 'State' : stateLabel(task)}<span aria-hidden="true">{menu ? '‹' : '⌄'}</span>
+      {menu ? <>State<span aria-hidden="true">‹</span></> : <>
+        <span className="stateicon" aria-hidden="true">{['scheduled', 'recurring'].includes(task.status) ? <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="2.5" y="4" width="15" height="13.5" rx="1.5"/><path d="M6 2.5v3M14 2.5v3M2.5 8h15M6 12.5h7m-2.5-2.5 2.5 2.5-2.5 2.5"/></svg> : ({ inbox: '↧', next: '→', waiting: '◷', someday: '◇', later: '…', completed: '✓', trash: '⌫' } as Record<string, string>)[task.status]}</span>
+        <span className="statelabel">{stateLabel(task)}</span>
+      </>}
     </button>
     <div ref={panel} id={id} popover="auto" className={`taskactionpanel statemenu ${mobile ? 'mobilemenu' : ''}`} role="menu" aria-label="State" onKeyDown={keys} onToggle={event => { if (event.newState === 'closed') setBranch(null); }}>
       {(!mobile || !branch) && <>

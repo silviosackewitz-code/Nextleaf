@@ -32,7 +32,7 @@ export function repeatPreview(rule: RepeatRule): string[] {
 }
 export function stateLabel(task: Task): string {
   if (task.status === 'recurring') return task.recurrence?.paused ? 'Repeating · Paused' : 'Repeating';
-  if (task.status === 'scheduled' && task.defer_until) return `Scheduled · ${task.defer_until.slice(0, 10)}`;
+  if (task.status === 'scheduled' && task.defer_until) return `Scheduled: ${new Date(`${task.defer_until.slice(0, 10)}T12:00:00Z`).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' })}`;
   if (task.status === 'waiting' && task.waiting_for) return `Waiting · ${task.waiting_for}`;
   return task.status[0].toUpperCase() + task.status.slice(1);
 }

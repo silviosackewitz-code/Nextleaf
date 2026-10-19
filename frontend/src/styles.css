@@ -184,7 +184,7 @@ h1{font-size:24px;margin:0}
 .task:not(.expanded) .taskmeta:empty{display:none}
 .task.expanded{padding:10px 8px;margin:5px 0}
 .editorheading textarea{display:block;min-height:38px;max-height:110px;resize:vertical;line-height:1.4;font-size:13px;padding:6px 8px}
-.detaillayout{grid-template-columns:minmax(0,1fr) 210px;gap:12px}
+.detaillayout{grid-template-columns:minmax(0,1fr) 250px;gap:12px}
 .detailfields{padding-left:12px}
 .noteslabel textarea{height:130px;min-height:90px;font-size:13px;line-height:1.45;padding:8px}
 .taskdetails .detailfields input,.taskdetails .detailfields select{height:29px;min-height:29px;padding-top:4px;padding-bottom:4px}
@@ -408,7 +408,9 @@ h1{font-size:24px;margin:0}
 @media(max-width:720px),(pointer:coarse) and (max-width:1024px){.projectrow>.tasknotepreview{grid-column:2/-1;margin-left:0;max-width:100%}}
 
 /* State owns scheduling and waiting details in both editing surfaces. */
-.statefield{display:flex;justify-content:space-between;width:100%;height:auto;min-height:32px;white-space:normal;text-align:left}
+.statefield{min-width:0;white-space:nowrap}
+.statefield .stateicon{display:flex;align-items:center;justify-content:center;flex:0 0 16px;width:16px}
+.statefield .statelabel{min-width:0;overflow:hidden;text-overflow:ellipsis;color:inherit}
 .statemenu{width:220px}
 .repeatform{display:grid;gap:12px;min-width:250px;max-width:420px}
 .repeatform label{display:grid;gap:6px}
@@ -417,3 +419,21 @@ h1{font-size:24px;margin:0}
 @media(max-width:720px){.statefield,.statemenu button{min-height:44px;font-size:16px}.repeatform input,.repeatform select{min-height:44px;font-size:16px}}
 
 @media(max-width:720px){.repeatform .datefield,.repeatform .repeatcheck{min-height:44px;font-size:16px}}
+
+/* Keep notes beside their title and reserve the same columns for every task. */
+.tasknoteindicator{display:inline-flex;vertical-align:-1px;margin-left:8px;color:#8a9fa4}
+@media(min-width:721px) and (pointer:fine){
+  .main{max-width:none;padding-left:clamp(24px,3vw,48px);padding-right:clamp(24px,3vw,48px)}
+  .task:not(.expanded){min-height:46px;padding:10px 12px;gap:10px;align-items:center;border-bottom-color:#e7edef}
+  .task:not(.expanded):hover{background:#f0f5f5;border-radius:5px}
+  .task:not(.expanded)>.rowfocus{flex:0 0 22px;width:22px;height:24px;line-height:24px;font-size:19px;color:#b6c6c9}
+  .task:not(.expanded)>.rowfocus.focused{color:#e5b900}
+  .task:not(.expanded) .taskopen{font-size:14px;line-height:23px}
+  .task:not(.expanded) .taskmeta{gap:2px 12px;font-size:12px;line-height:22px;max-height:46px;min-width:0}
+  .task:not(.expanded) .taskmeta .tag{border:0;border-radius:0;background:transparent;padding:0;margin:0;font-size:12px;line-height:22px;color:#68858b}
+  .task:not(.expanded) .taskmeta .tag>span{display:none}
+  .taskmenutrigger{border-radius:5px}
+  .taskmenutrigger:hover,.taskmenutrigger:focus-visible{background:#e5eeee;border-color:#cbdcde}
+  .taskgroup+.taskgroup{margin-top:26px}
+  .taskgroupheading{margin-bottom:10px}
+}

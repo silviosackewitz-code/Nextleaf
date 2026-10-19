@@ -4,6 +4,24 @@ Updated: 2026-10-18. Historical duplicate status notes have been consolidated;
 requirements and reasons remain in SPECIFICATION and DECISIONS, with original
 history available in Git.
 
+## Layout refinement after 0.1.1 feedback — source verified, not released
+
+The owner rejected the duplicated State chevron, wrapping scheduled ISO date and
+uneven notes/tag alignment, and asked for a more spacious list. The source now
+uses one shared dropdown chevron, a calendar icon and compact English scheduled
+dates. Desktop rows reserve a Focus column, keep notes beside the title, use
+quiet text tags and more spacing, and use the available window width.
+
+42 frontend tests and the TypeScript/Vite build passed. Isolated browser checks
+at 1120×760 verified identical title/menu positions for rows with and without
+notes, calendar selection and saving, plus the new Focus control. At 390px and
+320px, the complete scheduled label and icon fit; the 320px control remained
+46px high with no page overflow. These are browser checks with synthetic data,
+not physical iPhone or native Mac acceptance. Screenshots stay outside the repo.
+The installed Mac and Pi still run published 0.1.1; no replacement artifacts have
+been produced for this refinement. Continue owner scheduling acceptance after
+shipping the agreed UI update.
+
 ## Scheduling and Contacts update 0.1.1 — owner update and sync accepted
 
 The owner explicitly requested both Start Date and Make Repeating through State →
