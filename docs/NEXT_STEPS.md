@@ -4,7 +4,7 @@ Updated: 2026-10-18. Historical duplicate status notes have been consolidated;
 requirements and reasons remain in SPECIFICATION and DECISIONS, with original
 history available in Git.
 
-## UI refinement release 0.1.2 — in preparation
+## UI refinement release 0.1.2 — published, owner update pending
 
 The owner rejected the duplicated State chevron, wrapping scheduled ISO date and
 uneven notes/tag alignment, and asked for a more spacious list. The source now
@@ -18,9 +18,26 @@ notes, calendar selection and saving, plus the new Focus control. At 390px and
 320px, the complete scheduled label and icon fit; the 320px control remained
 46px high with no page overflow. These are browser checks with synthetic data,
 not physical iPhone or native Mac acceptance. Screenshots stay outside the repo.
-The owner chose version 0.1.2 and plans to install it on the following day.
-Release packages are being prepared; the installed Mac and Pi remain on 0.1.1.
-Continue owner scheduling acceptance after shipping the agreed UI update.
+Release [v0.1.2](https://github.com/silviosackewitz-code/Nextleaf/releases/tag/v0.1.2)
+is published with an Apple Silicon DMG, ARM64/AMD64 server images, matching source,
+Compose/environment files, license notices and checksums. The final mounted DMG
+passed image integrity and strict deep ad-hoc signature verification. Its MCP
+startup against an isolated copy of the existing 0.1.1 database preserved every
+table/field (including migration history and import receipts), relations, client/
+server identities and baseline, with SQLite integrity and foreign keys valid.
+
+Both native Linux builds passed Rust tests, fresh Compose/API/MCP checks, repeat
+generation, recreation persistence, and a container update from published 0.1.1.
+Anonymous public installation passed on both architectures. All eight payloads
+were independently downloaded and matched the published checksums.
+[Container/update verification](https://github.com/silviosackewitz-code/Nextleaf/actions/runs/39196352642)
+· [Public install verification](https://github.com/silviosackewitz-code/Nextleaf/actions/runs/39196892721).
+
+The owner plans to install 0.1.2 on the following day; the real Mac and Pi remain
+on 0.1.1. Schema and sync protocol stay at version 3. Owner update/scheduling
+acceptance and physical iPhone keyboard checks remain pending. Community UI and
+installation requests are open in issues #1 and #2, now targeting 0.1.2; external
+tester results have not been received as part of this verification.
 
 ## Scheduling and Contacts update 0.1.1 — owner update and sync accepted
 
